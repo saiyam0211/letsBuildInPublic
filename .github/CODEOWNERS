@@ -28,4 +28,4 @@ docker-compose*.yml @saiyam0211
 .env.example @saiyam0211
 
 # CI/CD files
-.github/workflows/ @saiyam0211 
+.github/workflows/ @saiyam0211
