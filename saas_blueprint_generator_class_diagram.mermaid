@@ -1,0 +1,228 @@
+classDiagram
+    class User {
+        +userId: string
+        +email: string
+        +password: string
+        +name: string
+        +createdAt: date
+        +updatedAt: date
+        +register(email, password, name): User
+        +login(email, password): AuthToken
+        +updateProfile(userId, details): User
+    }
+
+    class Project {
+        +projectId: string
+        +name: string
+        +description: string
+        +createdAt: date
+        +updatedAt: date
+        +ownerId: string
+        +status: string
+        +createProject(userId, name, description): Project
+        +getProjectDetails(projectId): Project
+        +updateProject(projectId, details): Project
+        +deleteProject(projectId): boolean
+    }
+
+    class SaasIdea {
+        +ideaId: string
+        +projectId: string
+        +description: string
+        +targetAudience: string
+        +problemStatement: string
+        +desiredFeatures: string[]
+        +technicalPreferences: string[]
+        +createdAt: date
+        +updatedAt: date
+        +createIdea(projectId, ideaDetails): SaasIdea
+        +updateIdea(ideaId, ideaDetails): SaasIdea
+        +getIdeaDetails(ideaId): SaasIdea
+    }
+
+    class IdeaValidation {
+        +validationId: string
+        +ideaId: string
+        +marketPotential: number
+        +similarProducts: object[]
+        +differentiationOpportunities: string[]
+        +risks: object[]
+        +confidenceScore: number
+        +improvementSuggestions: string[]
+        +createdAt: date
+        +validateIdea(ideaId): IdeaValidation
+        +getValidationResults(validationId): IdeaValidation
+        +updateValidation(validationId, newData): IdeaValidation
+    }
+
+    class Feature {
+        +featureId: string
+        +projectId: string
+        +name: string
+        +description: string
+        +priority: string
+        +complexity: number
+        +category: string
+        +userPersona: string
+        +createdAt: date
+        +updatedAt: date
+        +createFeature(projectId, featureDetails): Feature
+        +getFeatureDetails(featureId): Feature
+        +updateFeature(featureId, details): Feature
+        +deleteFeature(featureId): boolean
+    }
+
+    class TechStackRecommendation {
+        +recommendationId: string
+        +projectId: string
+        +frontend: object[]
+        +backend: object[]
+        +database: object[]
+        +infrastructure: object[]
+        +thirdPartyServices: object[]
+        +rationale: object
+        +alternativeOptions: object[]
+        +createdAt: date
+        +updatedAt: date
+        +generateRecommendation(projectId): TechStackRecommendation
+        +getRecommendation(recommendationId): TechStackRecommendation
+        +updateRecommendation(recommendationId, details): TechStackRecommendation
+    }
+
+    class Diagram {
+        +diagramId: string
+        +projectId: string
+        +type: string
+        +content: string
+        +metaData: object
+        +format: string
+        +createdAt: date
+        +updatedAt: date
+        +generateDiagram(projectId, type): Diagram
+        +getDiagramContent(diagramId): Diagram
+        +updateDiagram(diagramId, content): Diagram
+        +exportDiagram(diagramId, format): string
+    }
+
+    class Task {
+        +taskId: string
+        +projectId: string
+        +title: string
+        +description: string
+        +status: string
+        +priority: string
+        +effortEstimate: number
+        +assigneeId: string
+        +featureId: string
+        +createdAt: date
+        +updatedAt: date
+        +createTask(projectId, taskDetails): Task
+        +getTaskDetails(taskId): Task
+        +updateTask(taskId, details): Task
+        +deleteTask(taskId): boolean
+    }
+
+    class ProjectBoard {
+        +boardId: string
+        +projectId: string
+        +columns: object[]
+        +createdAt: date
+        +updatedAt: date
+        +createBoard(projectId, columnSettings): ProjectBoard
+        +getBoardDetails(boardId): ProjectBoard
+        +updateBoardStructure(boardId, structure): ProjectBoard
+    }
+
+    class MCPAgent {
+        +agentId: string
+        +projectId: string
+        +status: string
+        +capabilities: string[]
+        +createdAt: date
+        +updatedAt: date
+        +initializeAgent(projectId): MCPAgent
+        +generateCode(taskId, techContext): string
+        +manageTickets(projectId): boolean
+        +reviewCode(codeSnippet): object
+    }
+
+    class Blueprint {
+        +blueprintId: string
+        +projectId: string
+        +components: object[]
+        +versions: object[]
+        +createdAt: date
+        +updatedAt: date
+        +generateBlueprint(projectId): Blueprint
+        +getBlueprintDetails(blueprintId): Blueprint
+        +updateBlueprint(blueprintId, details): Blueprint
+        +compareVersions(versionId1, versionId2): object
+    }
+
+    class TeamMember {
+        +memberId: string
+        +userId: string
+        +projectId: string
+        +role: string
+        +permissions: string[]
+        +createdAt: date
+        +updatedAt: date
+        +addMemberToProject(projectId, userId, role): TeamMember
+        +updateMemberRole(memberId, role): TeamMember
+        +removeMemberFromProject(memberId): boolean
+    }
+
+    class AIService {
+        +serviceType: string
+        +config: object
+        +processInput(type, data): Promise
+        +validateOutput(result): boolean
+        +getConfidenceScore(result): number
+    }
+
+    class ExternalIntegration {
+        +integrationId: string
+        +projectId: string
+        +type: string
+        +config: object
+        +status: string
+        +createdAt: date
+        +updatedAt: date
+        +createIntegration(projectId, type, config): ExternalIntegration
+        +testConnection(integrationId): boolean
+        +syncData(integrationId, direction): boolean
+        +deleteIntegration(integrationId): boolean
+    }
+
+    class Notification {
+        +notificationId: string
+        +userId: string
+        +projectId: string
+        +type: string
+        +message: string
+        +isRead: boolean
+        +createdAt: date
+        +createNotification(userId, projectId, type, message): Notification
+        +markAsRead(notificationId): boolean
+        +getNotificationsForUser(userId): Notification[]
+    }
+
+    User "1" -- "*" Project : owns
+    Project "1" -- "1" SaasIdea : describes
+    SaasIdea "1" -- "1" IdeaValidation : validates
+    Project "1" -- "*" Feature : contains
+    Project "1" -- "1" TechStackRecommendation : recommends
+    Project "1" -- "*" Diagram : visualizes
+    Project "1" -- "*" Task : includes
+    Project "1" -- "1" ProjectBoard : manages
+    Project "1" -- "1" MCPAgent : assists
+    Project "1" -- "1" Blueprint : generates
+    Project "1" -- "*" TeamMember : collaborates
+    Project "1" -- "*" ExternalIntegration : connects
+    User "1" -- "*" Notification : receives
+    Project "1" -- "*" Notification : creates
+    AIService -- Blueprint : powers
+    AIService -- IdeaValidation : performs
+    AIService -- Diagram : generates
+    AIService -- TechStackRecommendation : determines
+    MCPAgent -- Task : manages
