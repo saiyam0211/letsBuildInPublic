@@ -1,0 +1,26 @@
+# Global owners
+* @saiyam0211
+
+# Frontend code
+/frontend/ @saiyam0211
+*.tsx @saiyam0211
+*.ts @saiyam0211
+
+# Backend code
+/backend/ @saiyam0211
+*.js @saiyam0211
+
+# Infrastructure and CI/CD
+/.github/ @saiyam0211
+/docker/ @saiyam0211
+*.yml @saiyam0211
+*.yaml @saiyam0211
+
+# Documentation
+*.md @saiyam0211
+/docs/ @saiyam0211
+
+# Configuration files
+package.json @saiyam0211
+package-lock.json @saiyam0211
+*.config.js @saiyam0211
