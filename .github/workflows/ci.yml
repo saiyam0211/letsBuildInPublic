@@ -87,20 +87,25 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
-    - name: Build frontend
-      run: npm run build:frontend
+    - name: Build applications
+      run: npm run build
       
-    - name: Build backend
-      run: npm run build:backend
-      
+    - name: Check build outputs
+      run: |
+        echo "Frontend dist contents:"
+        ls -la frontend/dist/ || echo "Frontend dist directory not found"
+        echo "Backend dist contents:"
+        ls -la backend/dist/ || echo "Backend dist directory not found"
+        
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-artifacts
         path: |
           frontend/dist/
           backend/dist/
-          
+        if-no-files-found: warn
+
   # Security scan job
   security:
     name: Security Scan
@@ -163,7 +168,7 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Download build artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: build-artifacts
         
@@ -188,7 +193,7 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Download build artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: build-artifacts
         
