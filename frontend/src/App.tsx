@@ -1,5 +1,3 @@
-import React from 'react'
-
 function App() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -9,10 +7,11 @@ function App() {
             🚀 SaaS Blueprint Generator Platform
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Transform your SaaS ideas into comprehensive visual blueprints and implementation plans
+            Transform your SaaS ideas into comprehensive visual blueprints and
+            implementation plans
           </p>
         </header>
-        
+
         <main className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
@@ -20,7 +19,9 @@ function App() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h3 className="font-semibold text-green-800 mb-2">✅ Phase 1.1 Complete</h3>
+                <h3 className="font-semibold text-green-800 mb-2">
+                  ✅ Phase 1.1 Complete
+                </h3>
                 <ul className="text-sm text-green-700 space-y-1">
                   <li>• Repository setup</li>
                   <li>• Branch protection</li>
@@ -29,9 +30,11 @@ function App() {
                   <li>• Docker environment</li>
                 </ul>
               </div>
-              
+
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-800 mb-2">🔄 Next: Phase 1.2</h3>
+                <h3 className="font-semibold text-blue-800 mb-2">
+                  🔄 Next: Phase 1.2
+                </h3>
                 <ul className="text-sm text-blue-700 space-y-1">
                   <li>• Database schema</li>
                   <li>• MongoDB models</li>
@@ -39,9 +42,11 @@ function App() {
                   <li>• Seed scripts</li>
                 </ul>
               </div>
-              
+
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-800 mb-2">⏳ Future Phases</h3>
+                <h3 className="font-semibold text-gray-800 mb-2">
+                  ⏳ Future Phases
+                </h3>
                 <ul className="text-sm text-gray-700 space-y-1">
                   <li>• Authentication</li>
                   <li>• AI integration</li>
@@ -51,7 +56,7 @@ function App() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg shadow-lg p-8">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
               🛠️ Tech Stack
@@ -76,13 +81,13 @@ function App() {
             </div>
           </div>
         </main>
-        
+
         <footer className="text-center mt-12 text-gray-600">
           <p>Built with ❤️ using free-tier tools and Cursor AI assistance</p>
         </footer>
       </div>
     </div>
-  )
+  );
 }
 
-export default App 
+export default App;

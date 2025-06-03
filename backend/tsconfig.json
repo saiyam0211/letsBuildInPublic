@@ -44,14 +44,16 @@
     "types": ["node"]
   },
   "include": [
-    "src/**/*",
-    "**/*.ts"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
     "**/*.test.ts",
-    "**/*.spec.ts"
+    "**/*.spec.ts",
+    "**/*.config.ts",
+    "vitest.config.ts",
+    "vitest.integration.config.ts"
   ],
   "ts-node": {
     "esm": true,

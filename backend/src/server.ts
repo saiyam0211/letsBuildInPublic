@@ -24,17 +24,19 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // CORS configuration
-app.use(cors({
-  origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
+    credentials: true,
+  })
+);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.status(200).json({
     status: 'OK',
     message: 'SaaS Blueprint Generator API is running',
@@ -44,7 +46,7 @@ app.get('/health', (req, res) => {
 });
 
 // API routes
-app.get('/api', (req, res) => {
+app.get('/api', (_req, res) => {
   res.json({
     message: '🚀 Welcome to SaaS Blueprint Generator API',
     version: '1.0.0',
@@ -56,19 +58,19 @@ app.get('/api', (req, res) => {
         'Security middleware',
         'CORS configuration',
         'Rate limiting',
-        'Environment configuration'
+        'Environment configuration',
       ],
       upcoming: [
         'MongoDB connection',
         'Authentication system',
         'AI integration',
-        'Blueprint generation engine'
-      ]
+        'Blueprint generation engine',
+      ],
     },
     endpoints: {
       health: '/health',
-      api: '/api'
-    }
+      api: '/api',
+    },
   });
 });
 
@@ -80,19 +82,30 @@ app.use('*', (req, res) => {
   });
 });
 
+// Error interface for proper typing
+interface HttpError extends Error {
+  status?: number;
+}
+
 // Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: HttpError, _req: express.Request, res: express.Response) => {
   console.error('Error:', err);
-  
-  res.status(err.status || 500).json({
-    error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
+
+  const status = err.status || 500;
+
+  res.status(status).json({
+    error:
+      process.env.NODE_ENV === 'production'
+        ? 'Internal server error'
+        : err.message,
     ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`
+// Start server only if not in test mode
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`
 🚀 SaaS Blueprint Generator API Server Started
 📍 Environment: ${process.env.NODE_ENV || 'development'}
 🌐 Server running on: http://localhost:${PORT}
@@ -100,6 +113,7 @@ app.listen(PORT, () => {
 💊 Health check: http://localhost:${PORT}/health
 ⏰ Started at: ${new Date().toISOString()}
   `);
-});
+  });
+}
 
-export default app; 
+export default app;
