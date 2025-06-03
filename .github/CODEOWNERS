@@ -1,0 +1,31 @@
+# Global code ownership - automatically assigns reviewers
+# This file defines who gets automatically requested for review
+
+# You are the owner of all files by default
+* @saiyam0211
+
+# Specific ownership for different file types
+# GitHub configuration files
+.github/ @saiyam0211
+
+# Configuration files
+*.json @saiyam0211
+*.yml @saiyam0211 
+*.yaml @saiyam0211
+package*.json @saiyam0211
+
+# Documentation (if re-added)
+*.md @saiyam0211
+
+# Source code (when added)
+src/ @saiyam0211
+app/ @saiyam0211
+lib/ @saiyam0211
+
+# Build and deployment files
+Dockerfile @saiyam0211
+docker-compose*.yml @saiyam0211
+.env.example @saiyam0211
+
+# CI/CD files
+.github/workflows/ @saiyam0211 
