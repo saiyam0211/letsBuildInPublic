@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { connectDatabase, checkDatabaseHealth } from '@/config/database';
 import { logger } from '@/utils/logger';
+import mongoose from 'mongoose';
 
 // Load environment variables
 dotenv.config();
@@ -16,6 +17,15 @@ const PORT = process.env.PORT || 5000;
 // Initialize database connection
 async function initializeDatabase() {
   try {
+    // Skip database initialization in test environment if already connected
+    if (
+      process.env.NODE_ENV === 'test' &&
+      mongoose.connection.readyState === 1
+    ) {
+      logger.info('Database already connected in test environment');
+      return;
+    }
+
     await connectDatabase();
     logger.info('Database initialized successfully');
   } catch (error) {
@@ -51,7 +61,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Health check endpoint with database status
 app.get('/health', async (_req, res) => {
   const dbHealthy = await checkDatabaseHealth();
-  
+
   res.status(dbHealthy ? 200 : 503).json({
     status: dbHealthy ? 'OK' : 'Service Unavailable',
     message: 'SaaS Blueprint Generator API is running',
@@ -78,7 +88,7 @@ app.get('/api', (_req, res) => {
         'MongoDB connection',
         'Database models and schemas',
         'Data validation and indexing',
-        'Database seed scripts'
+        'Database seed scripts',
       ],
       upcoming: [
         'Authentication system',
@@ -90,9 +100,15 @@ app.get('/api', (_req, res) => {
     },
     database: {
       models: [
-        'User', 'Project', 'SaasIdea', 'IdeaValidation',
-        'Feature', 'TechStackRecommendation', 'Task', 'Diagram'
-      ]
+        'User',
+        'Project',
+        'SaasIdea',
+        'IdeaValidation',
+        'Feature',
+        'TechStackRecommendation',
+        'Task',
+        'Diagram',
+      ],
     },
     endpoints: {
       health: '/health',

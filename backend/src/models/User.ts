@@ -11,51 +11,54 @@ export interface IUser extends Document {
   comparePassword(password: string): Promise<boolean>;
 }
 
-const userSchema = new Schema<IUser>({
-  email: {
-    type: String,
-    required: [true, 'Email is required'],
-    unique: true,
-    lowercase: true,
-    trim: true,
-    validate: {
-      validator: function(email: string) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const userSchema = new Schema<IUser>(
+  {
+    email: {
+      type: String,
+      required: [true, 'Email is required'],
+      unique: true,
+      lowercase: true,
+      trim: true,
+      validate: {
+        validator: function (email: string) {
+          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        },
+        message: 'Please provide a valid email address',
       },
-      message: 'Please provide a valid email address'
-    }
+    },
+    password: {
+      type: String,
+      required: [true, 'Password is required'],
+      minlength: [8, 'Password must be at least 8 characters long'],
+      select: false, // Don't include password in queries by default
+    },
+    name: {
+      type: String,
+      required: [true, 'Name is required'],
+      trim: true,
+      minlength: [2, 'Name must be at least 2 characters long'],
+      maxlength: [50, 'Name cannot exceed 50 characters'],
+    },
   },
-  password: {
-    type: String,
-    required: [true, 'Password is required'],
-    minlength: [8, 'Password must be at least 8 characters long'],
-    select: false // Don't include password in queries by default
-  },
-  name: {
-    type: String,
-    required: [true, 'Name is required'],
-    trim: true,
-    minlength: [2, 'Name must be at least 2 characters long'],
-    maxlength: [50, 'Name cannot exceed 50 characters']
+  {
+    timestamps: true, // Automatically adds createdAt and updatedAt
+    versionKey: false,
+    toJSON: {
+      transform: function (_doc, ret) {
+        ret.userId = ret._id;
+        delete ret._id;
+        delete ret.password;
+        return ret;
+      },
+    },
   }
-}, {
-  timestamps: true, // Automatically adds createdAt and updatedAt
-  versionKey: false,
-  toJSON: {
-    transform: function(_doc, ret) {
-      ret.userId = ret._id;
-      delete ret._id;
-      delete ret.password;
-      return ret;
-    }
-  }
-});
+);
 
 // Indexes
 userSchema.index({ createdAt: -1 });
 
 // Pre-save middleware to hash password
-userSchema.pre('save', async function(this: IUser, next) {
+userSchema.pre('save', async function (this: IUser, next) {
   // Only hash the password if it has been modified (or is new)
   if (!this.isModified('password')) {
     return next();
@@ -72,7 +75,10 @@ userSchema.pre('save', async function(this: IUser, next) {
 });
 
 // Instance method to compare passwords
-userSchema.methods.comparePassword = async function(this: IUser, candidatePassword: string): Promise<boolean> {
+userSchema.methods.comparePassword = async function (
+  this: IUser,
+  candidatePassword: string
+): Promise<boolean> {
   try {
     return await bcrypt.compare(candidatePassword, this.password);
   } catch (error) {
@@ -81,8 +87,8 @@ userSchema.methods.comparePassword = async function(this: IUser, candidatePasswo
 };
 
 // Static method for finding user by email (including password)
-userSchema.statics.findByEmail = function(email: string) {
+userSchema.statics.findByEmail = function (email: string) {
   return this.findOne({ email }).select('+password');
 };
 
-export const User = mongoose.model<IUser>('User', userSchema); 
+export const User = mongoose.model<IUser>('User', userSchema);

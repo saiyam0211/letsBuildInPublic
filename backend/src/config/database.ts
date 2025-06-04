@@ -8,7 +8,7 @@ interface DatabaseConfig {
 
 const getDatabaseConfig = (): DatabaseConfig => {
   const mongoUri = process.env.MONGODB_URI;
-  
+
   if (!mongoUri) {
     throw new Error('MONGODB_URI environment variable is not defined');
   }
@@ -20,14 +20,14 @@ const getDatabaseConfig = (): DatabaseConfig => {
       serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
       socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
       bufferCommands: false, // Disable mongoose buffering
-    }
+    },
   };
 };
 
 export const connectDatabase = async (): Promise<void> => {
   try {
     const config = getDatabaseConfig();
-    
+
     // Connection event handlers
     mongoose.connection.on('connected', () => {
       logger.info('MongoDB connected successfully');
@@ -85,5 +85,5 @@ export const checkDatabaseHealth = async (): Promise<boolean> => {
 export default {
   connect: connectDatabase,
   disconnect: disconnectDatabase,
-  healthCheck: checkDatabaseHealth
-}; 
+  healthCheck: checkDatabaseHealth,
+};

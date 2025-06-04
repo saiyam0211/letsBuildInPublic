@@ -19,4 +19,4 @@ export { MCPAgent } from './MCPAgent.js';
 export { ExternalIntegration } from './ExternalIntegration.js';
 
 // Re-export commonly used types from Mongoose
-export type { Document, Types } from 'mongoose'; 
+export type { Document, Types } from 'mongoose';

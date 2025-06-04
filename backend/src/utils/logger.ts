@@ -2,7 +2,7 @@ import winston from 'winston';
 
 const logFormat = winston.format.combine(
   winston.format.timestamp({
-    format: 'YYYY-MM-DD HH:mm:ss'
+    format: 'YYYY-MM-DD HH:mm:ss',
   }),
   winston.format.errors({ stack: true }),
   winston.format.printf(({ level, message, timestamp, stack }) => {
@@ -15,14 +15,11 @@ const logFormat = winston.format.combine(
 
 const createLogger = () => {
   const nodeEnv = process.env.NODE_ENV || 'development';
-  
+
   const transports: winston.transport[] = [
     new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        logFormat
-      )
-    })
+      format: winston.format.combine(winston.format.colorize(), logFormat),
+    }),
   ];
 
   // Add file transport in production
@@ -31,11 +28,11 @@ const createLogger = () => {
       new winston.transports.File({
         filename: 'logs/error.log',
         level: 'error',
-        format: logFormat
+        format: logFormat,
       }),
       new winston.transports.File({
         filename: 'logs/combined.log',
-        format: logFormat
+        format: logFormat,
       })
     );
   }
@@ -45,10 +42,10 @@ const createLogger = () => {
     format: logFormat,
     transports,
     // Don't exit on handled exceptions
-    exitOnError: false
+    exitOnError: false,
   });
 };
 
 export const logger = createLogger();
 
-export default logger; 
+export default logger;
