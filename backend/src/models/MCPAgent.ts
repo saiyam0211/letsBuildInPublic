@@ -4,7 +4,7 @@ interface IAgentCapability {
   name: string;
   description: string;
   enabled: boolean;
-  parameters?: Record<string, any>;
+  parameters?: Record<string, string | number | boolean>;
 }
 
 interface IAgentConfig {
@@ -351,7 +351,6 @@ mcpAgentSchema.methods.logExecution = function(
 // Method to check if agent can execute (rate limiting)
 mcpAgentSchema.methods.canExecute = function(this: IMCPAgent): boolean {
   const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   
   // Check daily limits
   if (this.usage.executionsToday >= this.usage.monthlyExecutionLimit / 30) {

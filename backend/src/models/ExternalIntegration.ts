@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 interface IAuthConfig {
   type: 'oauth2' | 'api_key' | 'basic_auth' | 'webhook' | 'none';
-  credentials: Record<string, any>;
+  credentials: Record<string, string | number | boolean>;
   scopes?: string[];
   expiresAt?: Date;
   refreshToken?: string;
@@ -22,7 +22,7 @@ interface IIntegrationLog {
   action: 'sync' | 'auth' | 'webhook' | 'api_call' | 'error';
   status: 'success' | 'failure' | 'warning';
   message: string;
-  details?: Record<string, any>;
+  details?: Record<string, string | number | boolean>;
 }
 
 export interface IExternalIntegration extends Document {
@@ -375,12 +375,12 @@ externalIntegrationSchema.methods.logActivity = function(
   action: string,
   status: string,
   message: string,
-  details?: Record<string, any>
+  details?: Record<string, string | number | boolean>
 ) {
   const log: IIntegrationLog = {
     timestamp: new Date(),
-    action: action as any,
-    status: status as any,
+    action: action as IIntegrationLog['action'],
+    status: status as IIntegrationLog['status'],
     message,
     ...(details && { details })
   };

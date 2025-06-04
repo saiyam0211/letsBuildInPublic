@@ -301,6 +301,22 @@ blueprintSchema.methods.generateShareLink = function(this: IBlueprint): string {
   return this.shareSettings.shareLink;
 };
 
+// Method to check if user can access blueprint
+blueprintSchema.methods.canAccess = function(this: IBlueprint, userId?: string): boolean {
+  // If blueprint is public, anyone can access
+  if (this.shareSettings.isPublic) {
+    return true;
+  }
+  
+  // If userId is provided, check if it's the project owner
+  if (userId) {
+    // This would need to be implemented with actual user validation
+    return true; // Simplified for now
+  }
+  
+  return false;
+};
+
 // Pre-save middleware to update lastAccessedAt
 blueprintSchema.pre('save', function(this: IBlueprint) {
   if (this.isModified() && !this.isModified('lastAccessedAt')) {

@@ -425,16 +425,16 @@ async function seedDatabase() {
     logger.info('✅ Database seeding completed successfully!');
     logger.info(`Created:
       - ${users.length} users
-      - 1 project
-      - 1 SaaS idea with validation
+      - 1 project: ${project.name}
+      - 1 SaaS idea with validation (ID: ${ideaValidation._id})
       - ${features.length} features
-      - 1 tech stack recommendation
+      - 1 tech stack recommendation (ID: ${techStackRecommendation._id})
       - ${tasks.length} tasks
-      - 1 system diagram
-      - 1 project board
-      - 1 blueprint
-      - 1 MCP agent
-      - 1 external integration`);
+      - 1 system diagram: ${diagram.type}
+      - 1 project board: ${projectBoard.name}
+      - 1 blueprint: ${blueprint.name}
+      - 1 MCP agent: ${mcpAgent.name}
+      - 1 external integration: ${externalIntegration.name}`);
 
   } catch (error) {
     logger.error('Error seeding database:', error);
