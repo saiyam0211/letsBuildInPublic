@@ -4,12 +4,25 @@ import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import { connectDatabase, checkDatabaseHealth } from '@/config/database';
+import { logger } from '@/utils/logger';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Initialize database connection
+async function initializeDatabase() {
+  try {
+    await connectDatabase();
+    logger.info('Database initialized successfully');
+  } catch (error) {
+    logger.error('Failed to initialize database:', error);
+    process.exit(1);
+  }
+}
 
 // Security middleware
 app.use(helmet());
@@ -35,11 +48,14 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Health check endpoint
-app.get('/health', (_req, res) => {
-  res.status(200).json({
-    status: 'OK',
+// Health check endpoint with database status
+app.get('/health', async (_req, res) => {
+  const dbHealthy = await checkDatabaseHealth();
+  
+  res.status(dbHealthy ? 200 : 503).json({
+    status: dbHealthy ? 'OK' : 'Service Unavailable',
     message: 'SaaS Blueprint Generator API is running',
+    database: dbHealthy ? 'Connected' : 'Disconnected',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
   });
@@ -50,8 +66,8 @@ app.get('/api', (_req, res) => {
   res.json({
     message: '🚀 Welcome to SaaS Blueprint Generator API',
     version: '1.0.0',
-    status: 'Phase 1.1 Complete - Local Development Environment Ready',
-    nextPhase: 'Phase 1.2 - Database Schema Design',
+    status: 'Phase 1.2 Complete - Database Schema & Models Ready',
+    nextPhase: 'Phase 2.1 - Authentication & User Management',
     features: {
       completed: [
         'Express server setup',
@@ -59,13 +75,24 @@ app.get('/api', (_req, res) => {
         'CORS configuration',
         'Rate limiting',
         'Environment configuration',
+        'MongoDB connection',
+        'Database models and schemas',
+        'Data validation and indexing',
+        'Database seed scripts'
       ],
       upcoming: [
-        'MongoDB connection',
         'Authentication system',
+        'User management endpoints',
+        'Project CRUD operations',
         'AI integration',
         'Blueprint generation engine',
       ],
+    },
+    database: {
+      models: [
+        'User', 'Project', 'SaasIdea', 'IdeaValidation',
+        'Feature', 'TechStackRecommendation', 'Task', 'Diagram'
+      ]
     },
     endpoints: {
       health: '/health',
@@ -89,7 +116,7 @@ interface HttpError extends Error {
 
 // Error handling middleware
 app.use((err: HttpError, _req: express.Request, res: express.Response) => {
-  console.error('Error:', err);
+  logger.error('Error:', err);
 
   const status = err.status || 500;
 
@@ -104,15 +131,19 @@ app.use((err: HttpError, _req: express.Request, res: express.Response) => {
 
 // Start server only if not in test mode
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`
+  // Initialize database and start server
+  initializeDatabase().then(() => {
+    app.listen(PORT, () => {
+      logger.info(`
 🚀 SaaS Blueprint Generator API Server Started
 📍 Environment: ${process.env.NODE_ENV || 'development'}
 🌐 Server running on: http://localhost:${PORT}
 🔗 API endpoint: http://localhost:${PORT}/api
 💊 Health check: http://localhost:${PORT}/health
+🗄️  Database: MongoDB connected
 ⏰ Started at: ${new Date().toISOString()}
-  `);
+    `);
+    });
   });
 }
 
