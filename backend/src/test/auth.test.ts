@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
-import { AuthService } from '@/services/authService';
-import { User } from '@/models/User';
+import { AuthService } from '../services/authService';
 
 describe('AuthService', () => {
   let mongoServer: MongoMemoryServer;

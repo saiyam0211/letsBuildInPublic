@@ -24,7 +24,7 @@ export const authRateLimit = rateLimit({
       retryAfter: Math.ceil(authConfig.rateLimit.auth.windowMs / 1000),
     });
   },
-  skip: (req) => {
+  skip: (_req) => {
     // Skip rate limiting in test environment
     return process.env.NODE_ENV === 'test';
   },
@@ -52,7 +52,7 @@ export const registrationRateLimit = rateLimit({
       retryAfter: Math.ceil(authConfig.rateLimit.register.windowMs / 1000),
     });
   },
-  skip: (req) => {
+  skip: (_req) => {
     // Skip rate limiting in test environment
     return process.env.NODE_ENV === 'test';
   },
@@ -80,7 +80,7 @@ export const generalAuthRateLimit = rateLimit({
       retryAfter: 900,
     });
   },
-  skip: (req) => {
+  skip: (_req) => {
     // Skip rate limiting in test environment
     return process.env.NODE_ENV === 'test';
   },

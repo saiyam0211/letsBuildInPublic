@@ -54,7 +54,7 @@ export const authenticateToken = async (
  */
 export const optionalAuth = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
@@ -83,9 +83,9 @@ export const optionalAuth = async (
  * Note: Currently all users have the same role, but prepared for future RBAC
  */
 export const requireRole = (roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return (req: Request, _res: Response, next: NextFunction): void => {
     if (!req.user) {
-      res.status(401).json({
+      _res.status(401).json({
         error: 'Authentication required',
         message: 'You must be logged in to access this resource',
       });
@@ -97,7 +97,7 @@ export const requireRole = (roles: string[]) => {
     const userRole = 'user';
     
     if (!roles.includes(userRole)) {
-      res.status(403).json({
+      _res.status(403).json({
         error: 'Insufficient permissions',
         message: 'You do not have permission to access this resource',
       });

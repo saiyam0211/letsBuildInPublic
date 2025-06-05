@@ -31,10 +31,10 @@ export class AuthService {
    */
   static generateAccessToken(payload: TokenPayload): string {
     return jwt.sign(payload, authConfig.jwt.secret, {
-      expiresIn: authConfig.jwt.expiresIn,
+      expiresIn: authConfig.jwt.expiresIn as string,
       issuer: 'saas-blueprint-generator',
       audience: 'saas-blueprint-users',
-    });
+    } as SignOptions);
   }
 
   /**
@@ -42,10 +42,10 @@ export class AuthService {
    */
   static generateRefreshToken(payload: TokenPayload): string {
     return jwt.sign(payload, authConfig.jwt.refreshSecret, {
-      expiresIn: authConfig.jwt.refreshExpiresIn,
+      expiresIn: authConfig.jwt.refreshExpiresIn as string,
       issuer: 'saas-blueprint-generator',
       audience: 'saas-blueprint-users',
-    });
+    } as SignOptions);
   }
 
   /**

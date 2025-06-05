@@ -167,8 +167,8 @@ export const validateRefreshToken = [
  * Sanitize user input to prevent XSS and other attacks
  */
 export const sanitizeInput = (
-  req: Request,
-  res: Response,
+  _req: Request,
+  _res: Response,
   next: NextFunction
 ): void => {
   // Express-validator already handles basic sanitization
