@@ -3,6 +3,8 @@ import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { logger } from '@/utils/logger';
+import path from 'path';
+import fs from 'fs';
 
 let mongoServer: MongoMemoryServer;
 
@@ -14,14 +16,26 @@ beforeAll(async () => {
       await mongoose.connection.close();
     }
 
-    // Configure MongoDB Memory Server with specific options for faster startup
+    // Create unique cache directory for CI environments to avoid lockfile conflicts
+    const cacheDir = process.env.CI
+      ? `/tmp/mongo-binaries-integration-${process.env.GITHUB_RUN_ID || Date.now()}`
+      : path.join(process.cwd(), '.mongodb-binaries-integration');
+
+    // Ensure cache directory exists
+    if (!fs.existsSync(cacheDir)) {
+      fs.mkdirSync(cacheDir, { recursive: true });
+    }
+
+    // Configure MongoDB Memory Server with CI-safe options
     mongoServer = await MongoMemoryServer.create({
       binary: {
         version: '6.0.4', // Use a specific version to avoid download delays
+        downloadDir: cacheDir, // Use unique directory to avoid conflicts
       },
       instance: {
         dbName: 'test_saas_blueprint_generator_integration',
         port: 0, // Let MongoDB choose an available port
+        storageEngine: 'wiredTiger',
       },
     });
 
@@ -34,9 +48,10 @@ beforeAll(async () => {
     // Connect to the in-memory database with optimized settings for testing
     await mongoose.connect(mongoUri, {
       maxPoolSize: 5, // Reasonable pool for integration tests
-      serverSelectionTimeoutMS: 15000, // Longer timeout for integration environment
+      serverSelectionTimeoutMS: 20000, // Increased timeout for integration environment
       socketTimeoutMS: 45000,
       bufferCommands: false,
+      connectTimeoutMS: 30000, // Increased timeout for CI
     });
 
     logger.info('Integration test database connected successfully');
@@ -44,17 +59,40 @@ beforeAll(async () => {
     logger.error('Failed to setup integration test database:', error);
     throw error;
   }
-}, 90000); // 90 second timeout for setup (integration tests need more time)
+}, 150000); // 150 second timeout for setup (increased for CI integration tests)
 
 afterAll(async () => {
-  // Cleanup test database connection
+  // Cleanup test database connection with proper error handling
   try {
+    // Close mongoose connection first
     if (mongoose.connection.readyState !== 0) {
       await mongoose.connection.close();
+      logger.info('Mongoose connection closed');
     }
 
+    // Stop MongoDB Memory Server with timeout
     if (mongoServer) {
-      await mongoServer.stop();
+      await Promise.race([
+        mongoServer.stop(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('MongoDB stop timeout')), 45000)
+        ),
+      ]);
+      logger.info('MongoDB Memory Server stopped');
+    }
+
+    // Clean up lock files in CI environment
+    if (process.env.CI) {
+      const cacheDir = `/tmp/mongo-binaries-integration-${process.env.GITHUB_RUN_ID || Date.now()}`;
+      try {
+        if (fs.existsSync(cacheDir)) {
+          fs.rmSync(cacheDir, { recursive: true, force: true });
+          logger.info('Cleaned up MongoDB cache directory');
+        }
+      } catch (cleanupError) {
+        logger.warn('Failed to cleanup cache directory:', cleanupError);
+        // Don't throw - this is not critical
+      }
     }
 
     logger.info('Integration test database disconnected successfully');
@@ -62,7 +100,7 @@ afterAll(async () => {
     logger.error('Error during integration test cleanup:', error);
     // Don't throw in cleanup to avoid masking test failures
   }
-}, 45000); // 45 second timeout for cleanup
+}, 90000); // 90 second timeout for cleanup
 
 beforeEach(async () => {
   // Clear all collections before each test

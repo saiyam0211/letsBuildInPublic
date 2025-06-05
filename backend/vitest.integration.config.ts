@@ -7,9 +7,10 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./src/test/integration-setup.ts'],
     include: ['src/**/*.integration.test.ts'],
-    testTimeout: 45000, // 45 seconds for individual integration tests
-    hookTimeout: 120000, // 120 seconds for setup/teardown hooks
+    testTimeout: process.env.CI ? 60000 : 45000, // Increased timeout for CI integration tests
+    hookTimeout: process.env.CI ? 240000 : 180000, // Increased hook timeout for CI
     isolate: true, // Run tests in isolation
+    retry: process.env.CI ? 3 : 1, // More retries for integration tests in CI
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],

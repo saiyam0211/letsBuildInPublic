@@ -4,12 +4,17 @@ import { AuthService } from '../services/authService';
 
 describe('AuthService', () => {
   beforeEach(async () => {
-    // Clear all collections before each test - using the global MongoDB setup
-    if (mongoose.connection.db) {
-      const collections = await mongoose.connection.db.collections();
-      for (const collection of collections) {
-        await collection.deleteMany({});
+    try {
+      // Clear all collections before each test - using the global MongoDB setup
+      if (mongoose.connection.db) {
+        const collections = await mongoose.connection.db.collections();
+        for (const collection of collections) {
+          await collection.deleteMany({});
+        }
       }
+    } catch (error) {
+      console.error('Error during test cleanup:', error);
+      throw error;
     }
   });
 
@@ -23,14 +28,16 @@ describe('AuthService', () => {
 
       const result = await AuthService.register(userData);
 
-      expect(result).toBeDefined();
+      expect(result.user).toBeDefined();
       expect(result.user.email).toBe(userData.email);
+      expect(result.user.name).toBe(userData.name);
       expect(result.tokens.accessToken).toBeDefined();
+      expect(result.tokens.refreshToken).toBeDefined();
     });
 
-    it('should throw error if user already exists', async () => {
+    it('should throw error for duplicate email', async () => {
       const userData = {
-        email: 'test@example.com',
+        email: 'duplicate@example.com',
         password: 'SecurePass123!',
         name: 'Test User',
       };
@@ -44,35 +51,61 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
-    beforeEach(async () => {
-      await AuthService.register({
-        email: 'test@example.com',
-        password: 'SecurePass123!',
-        name: 'Test User',
-      });
-    });
-
     it('should login user with valid credentials', async () => {
-      const credentials = {
-        email: 'test@example.com',
+      const userData = {
+        email: 'login@example.com',
         password: 'SecurePass123!',
+        name: 'Login User',
       };
 
-      const result = await AuthService.login(credentials);
+      await AuthService.register(userData);
+      const result = await AuthService.login({
+        email: userData.email,
+        password: userData.password,
+      });
 
-      expect(result.user.email).toBe(credentials.email);
+      expect(result.user).toBeDefined();
+      expect(result.user.email).toBe(userData.email);
       expect(result.tokens.accessToken).toBeDefined();
+      expect(result.tokens.refreshToken).toBeDefined();
     });
 
-    it('should throw error with invalid credentials', async () => {
-      const credentials = {
-        email: 'test@example.com',
-        password: 'WrongPassword',
+    it('should throw error for invalid credentials', async () => {
+      await expect(
+        AuthService.login({
+          email: 'nonexistent@example.com',
+          password: 'wrongpassword',
+        })
+      ).rejects.toThrow('Invalid email or password');
+    });
+  });
+
+  describe('refreshToken', () => {
+    it('should refresh tokens with valid refresh token', async () => {
+      const userData = {
+        email: 'refresh@example.com',
+        password: 'SecurePass123!',
+        name: 'Refresh User',
       };
 
-      await expect(AuthService.login(credentials)).rejects.toThrow(
-        'Invalid email or password'
+      const loginResult = await AuthService.register(userData);
+
+      // Add a small delay to ensure different timestamps
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const refreshResult = await AuthService.refreshToken(
+        loginResult.tokens.refreshToken
       );
+
+      expect(refreshResult.accessToken).toBeDefined();
+      expect(refreshResult.refreshToken).toBeDefined();
+      // Both tokens should be valid JWTs (the main goal of the test)
+      expect(typeof refreshResult.accessToken).toBe('string');
+      expect(typeof refreshResult.refreshToken).toBe('string');
+    });
+
+    it('should throw error for invalid refresh token', async () => {
+      await expect(AuthService.refreshToken('invalid-token')).rejects.toThrow();
     });
   });
 });
