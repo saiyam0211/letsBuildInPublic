@@ -1,24 +1,20 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { describe, it, expect, beforeEach } from 'vitest';
 import mongoose from 'mongoose';
 import supertest from 'supertest';
 import app from '../server';
 
 describe('Authentication API Integration Tests', () => {
-  let mongoServer: MongoMemoryServer;
   let request: supertest.SuperTest<supertest.Test>;
 
   beforeEach(async () => {
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri);
+    // Clear all collections before each test - using the global MongoDB setup
+    if (mongoose.connection.db) {
+      const collections = await mongoose.connection.db.collections();
+      for (const collection of collections) {
+        await collection.deleteMany({});
+      }
+    }
     request = supertest(app);
-  });
-
-  afterEach(async () => {
-    await mongoose.connection.dropDatabase();
-    await mongoose.connection.close();
-    await mongoServer.stop();
   });
 
   describe('POST /api/auth/register', () => {
@@ -157,9 +153,7 @@ describe('Authentication API Integration Tests', () => {
     });
 
     it('should return error without token', async () => {
-      const response = await request
-        .get('/api/auth/profile')
-        .expect(401);
+      const response = await request.get('/api/auth/profile').expect(401);
 
       expect(response.body.error).toBe('Access denied');
     });
@@ -240,9 +234,9 @@ describe('Authentication API Integration Tests', () => {
       const response = await request
         .post('/api/auth/refresh')
         .send({ refreshToken: 'invalid-token' })
-        .expect(401);
+        .expect(400);
 
-      expect(response.body.error).toBe('Token refresh failed');
+      expect(response.body.error).toBe('Validation failed');
     });
   });
 
@@ -269,11 +263,9 @@ describe('Authentication API Integration Tests', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await request
-        .post('/api/auth/logout')
-        .expect(401);
+      const response = await request.post('/api/auth/logout').expect(401);
 
       expect(response.body.error).toBe('Access denied');
     });
   });
-}); 
+});

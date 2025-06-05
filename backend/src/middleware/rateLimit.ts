@@ -24,7 +24,7 @@ export const authRateLimit = rateLimit({
       retryAfter: Math.ceil(authConfig.rateLimit.auth.windowMs / 1000),
     });
   },
-  skip: (_req) => {
+  skip: _req => {
     // Skip rate limiting in test environment
     return process.env.NODE_ENV === 'test';
   },
@@ -45,14 +45,16 @@ export const registrationRateLimit = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {
-    logger.warn(`Rate limit exceeded for registration endpoint from IP: ${req.ip}`);
+    logger.warn(
+      `Rate limit exceeded for registration endpoint from IP: ${req.ip}`
+    );
     res.status(429).json({
       error: 'Too many registration attempts',
       message: `Please try again after ${authConfig.rateLimit.register.windowMs / 60000} minutes`,
       retryAfter: Math.ceil(authConfig.rateLimit.register.windowMs / 1000),
     });
   },
-  skip: (_req) => {
+  skip: _req => {
     // Skip rate limiting in test environment
     return process.env.NODE_ENV === 'test';
   },
@@ -80,8 +82,8 @@ export const generalAuthRateLimit = rateLimit({
       retryAfter: 900,
     });
   },
-  skip: (_req) => {
+  skip: _req => {
     // Skip rate limiting in test environment
     return process.env.NODE_ENV === 'test';
   },
-}); 
+});

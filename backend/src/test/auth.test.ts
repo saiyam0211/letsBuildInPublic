@@ -1,21 +1,16 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { describe, it, expect, beforeEach } from 'vitest';
 import mongoose from 'mongoose';
 import { AuthService } from '../services/authService';
 
 describe('AuthService', () => {
-  let mongoServer: MongoMemoryServer;
-
   beforeEach(async () => {
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri);
-  });
-
-  afterEach(async () => {
-    await mongoose.connection.dropDatabase();
-    await mongoose.connection.close();
-    await mongoServer.stop();
+    // Clear all collections before each test - using the global MongoDB setup
+    if (mongoose.connection.db) {
+      const collections = await mongoose.connection.db.collections();
+      for (const collection of collections) {
+        await collection.deleteMany({});
+      }
+    }
   });
 
   describe('register', () => {
@@ -80,4 +75,4 @@ describe('AuthService', () => {
       );
     });
   });
-}); 
+});

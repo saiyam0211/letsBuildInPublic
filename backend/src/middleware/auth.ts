@@ -34,10 +34,10 @@ export const authenticateToken = async (
 
     // Verify token
     const decoded = AuthService.verifyAccessToken(token);
-    
+
     // Attach user info to request
     req.user = decoded;
-    
+
     next();
   } catch (error) {
     logger.error('Token authentication failed:', error);
@@ -95,7 +95,7 @@ export const requireRole = (roles: string[]) => {
     // For now, all authenticated users are considered 'user' role
     // This can be extended when we add role field to User model
     const userRole = 'user';
-    
+
     if (!roles.includes(userRole)) {
       _res.status(403).json({
         error: 'Insufficient permissions',
@@ -123,7 +123,7 @@ export const requireResourceOwnership = (userIdPath: string = 'userId') => {
     }
 
     const resourceUserId = req.params[userIdPath] || req.body[userIdPath];
-    
+
     if (req.user.userId !== resourceUserId) {
       res.status(403).json({
         error: 'Access denied',
@@ -134,4 +134,4 @@ export const requireResourceOwnership = (userIdPath: string = 'userId') => {
 
     next();
   };
-}; 
+};

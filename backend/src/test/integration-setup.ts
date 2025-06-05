@@ -7,15 +7,21 @@ import { logger } from '@/utils/logger';
 let mongoServer: MongoMemoryServer;
 
 beforeAll(async () => {
-  // Setup in-memory MongoDB for testing
+  // Setup in-memory MongoDB for integration testing
   try {
+    // Ensure any existing connection is closed first
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.close();
+    }
+
     // Configure MongoDB Memory Server with specific options for faster startup
     mongoServer = await MongoMemoryServer.create({
       binary: {
         version: '6.0.4', // Use a specific version to avoid download delays
       },
       instance: {
-        dbName: 'test_saas_blueprint_generator',
+        dbName: 'test_saas_blueprint_generator_integration',
+        port: 0, // Let MongoDB choose an available port
       },
     });
 
@@ -27,18 +33,18 @@ beforeAll(async () => {
 
     // Connect to the in-memory database with optimized settings for testing
     await mongoose.connect(mongoUri, {
-      maxPoolSize: 5, // Smaller pool for tests
-      serverSelectionTimeoutMS: 10000, // Longer timeout for test environment
+      maxPoolSize: 5, // Reasonable pool for integration tests
+      serverSelectionTimeoutMS: 15000, // Longer timeout for integration environment
       socketTimeoutMS: 45000,
       bufferCommands: false,
     });
 
-    logger.info('Test database connected successfully');
+    logger.info('Integration test database connected successfully');
   } catch (error) {
-    logger.error('Failed to setup test database:', error);
+    logger.error('Failed to setup integration test database:', error);
     throw error;
   }
-}, 60000); // 60 second timeout for setup
+}, 90000); // 90 second timeout for setup (integration tests need more time)
 
 afterAll(async () => {
   // Cleanup test database connection
@@ -51,12 +57,12 @@ afterAll(async () => {
       await mongoServer.stop();
     }
 
-    logger.info('Test database disconnected successfully');
+    logger.info('Integration test database disconnected successfully');
   } catch (error) {
-    logger.error('Error during test cleanup:', error);
+    logger.error('Error during integration test cleanup:', error);
     // Don't throw in cleanup to avoid masking test failures
   }
-}, 30000); // 30 second timeout for cleanup
+}, 45000); // 45 second timeout for cleanup
 
 beforeEach(async () => {
   // Clear all collections before each test
@@ -69,7 +75,7 @@ beforeEach(async () => {
       }
     }
   } catch (error) {
-    logger.error('Error clearing test data:', error);
+    logger.error('Error clearing integration test data:', error);
     throw error;
   }
 });

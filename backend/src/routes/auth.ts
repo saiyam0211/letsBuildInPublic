@@ -35,23 +35,13 @@ const router = Router();
  * POST /api/auth/register
  * Register a new user
  */
-router.post(
-  '/register',
-  registrationRateLimit,
-  validateRegistration,
-  register
-);
+router.post('/register', registrationRateLimit, validateRegistration, register);
 
 /**
  * POST /api/auth/login
  * Login user with email and password
  */
-router.post(
-  '/login',
-  authRateLimit,
-  validateLogin,
-  login
-);
+router.post('/login', authRateLimit, validateLogin, login);
 
 /**
  * POST /api/auth/refresh
@@ -70,21 +60,13 @@ router.post(
  * POST /api/auth/logout
  * Logout user (primarily client-side operation)
  */
-router.post(
-  '/logout',
-  authenticateToken,
-  logout
-);
+router.post('/logout', authenticateToken, logout);
 
 /**
  * GET /api/auth/profile
  * Get user profile information
  */
-router.get(
-  '/profile',
-  authenticateToken,
-  getProfile
-);
+router.get('/profile', authenticateToken, getProfile);
 
 /**
  * PUT /api/auth/profile
@@ -110,4 +92,4 @@ router.put(
   changePassword
 );
 
-export default router; 
+export default router;

@@ -4,9 +4,13 @@ dotenv.config();
 
 export const authConfig = {
   jwt: {
-    secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-for-development-only',
+    secret:
+      process.env.JWT_SECRET ||
+      'your-super-secret-jwt-key-for-development-only',
     expiresIn: process.env.JWT_EXPIRES_IN || '24h',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-super-secret-refresh-key-for-development-only',
+    refreshSecret:
+      process.env.JWT_REFRESH_SECRET ||
+      'your-super-secret-refresh-key-for-development-only',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },
   password: {
@@ -39,9 +43,7 @@ export const validateAuthConfig = () => {
   }
 
   const requiredEnvVars = ['JWT_SECRET', 'JWT_REFRESH_SECRET'];
-  const missingVars = requiredEnvVars.filter(
-    (varName) => !process.env[varName]
-  );
+  const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
   if (missingVars.length > 0) {
     console.warn(
@@ -54,4 +56,4 @@ export const validateAuthConfig = () => {
       '⚠️  Warning: Using default JWT_SECRET. Set a secure secret in production!'
     );
   }
-}; 
+};

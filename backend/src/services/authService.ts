@@ -255,9 +255,8 @@ export class AuthService {
       }
 
       // Verify current password
-      const isCurrentPasswordValid = await user.comparePassword(
-        currentPassword
-      );
+      const isCurrentPasswordValid =
+        await user.comparePassword(currentPassword);
       if (!isCurrentPasswordValid) {
         throw new Error('Current password is incorrect');
       }
@@ -272,4 +271,4 @@ export class AuthService {
       throw error;
     }
   }
-} 
+}

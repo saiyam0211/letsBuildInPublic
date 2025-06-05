@@ -11,7 +11,7 @@ export const handleValidationErrors = (
   next: NextFunction
 ): void => {
   const errors = validationResult(req);
-  
+
   if (!errors.isEmpty()) {
     res.status(400).json({
       error: 'Validation failed',
@@ -24,7 +24,7 @@ export const handleValidationErrors = (
     });
     return;
   }
-  
+
   next();
 };
 
@@ -33,11 +33,13 @@ export const handleValidationErrors = (
  */
 const passwordValidation = () => {
   return body('password')
-    .isLength({ 
-      min: authConfig.password.minLength, 
-      max: authConfig.password.maxLength 
+    .isLength({
+      min: authConfig.password.minLength,
+      max: authConfig.password.maxLength,
     })
-    .withMessage(`Password must be between ${authConfig.password.minLength} and ${authConfig.password.maxLength} characters`)
+    .withMessage(
+      `Password must be between ${authConfig.password.minLength} and ${authConfig.password.maxLength} characters`
+    )
     .matches(/^(?=.*[a-z])/)
     .withMessage('Password must contain at least one lowercase letter')
     .matches(/^(?=.*[A-Z])/)
@@ -45,7 +47,9 @@ const passwordValidation = () => {
     .matches(/^(?=.*\d)/)
     .withMessage('Password must contain at least one number')
     .matches(/^(?=.*[@$!%*?&])/)
-    .withMessage('Password must contain at least one special character (@$!%*?&)');
+    .withMessage(
+      'Password must contain at least one special character (@$!%*?&)'
+    );
 };
 
 /**
@@ -69,7 +73,9 @@ const nameValidation = () => {
     .isLength({ min: 2, max: 50 })
     .withMessage('Name must be between 2 and 50 characters')
     .matches(/^[a-zA-Z\s'-]+$/)
-    .withMessage('Name can only contain letters, spaces, hyphens, and apostrophes')
+    .withMessage(
+      'Name can only contain letters, spaces, hyphens, and apostrophes'
+    )
     .trim();
 };
 
@@ -92,9 +98,7 @@ export const validateLogin = [
     .withMessage('Please provide a valid email address')
     .normalizeEmail()
     .toLowerCase(),
-  body('password')
-    .notEmpty()
-    .withMessage('Password is required'),
+  body('password').notEmpty().withMessage('Password is required'),
   handleValidationErrors,
 ];
 
@@ -106,11 +110,13 @@ export const validatePasswordChange = [
     .notEmpty()
     .withMessage('Current password is required'),
   body('newPassword')
-    .isLength({ 
-      min: authConfig.password.minLength, 
-      max: authConfig.password.maxLength 
+    .isLength({
+      min: authConfig.password.minLength,
+      max: authConfig.password.maxLength,
     })
-    .withMessage(`New password must be between ${authConfig.password.minLength} and ${authConfig.password.maxLength} characters`)
+    .withMessage(
+      `New password must be between ${authConfig.password.minLength} and ${authConfig.password.maxLength} characters`
+    )
     .matches(/^(?=.*[a-z])/)
     .withMessage('New password must contain at least one lowercase letter')
     .matches(/^(?=.*[A-Z])/)
@@ -118,14 +124,15 @@ export const validatePasswordChange = [
     .matches(/^(?=.*\d)/)
     .withMessage('New password must contain at least one number')
     .matches(/^(?=.*[@$!%*?&])/)
-    .withMessage('New password must contain at least one special character (@$!%*?&)'),
-  body('confirmPassword')
-    .custom((value, { req }) => {
-      if (value !== req.body.newPassword) {
-        throw new Error('Password confirmation does not match new password');
-      }
-      return true;
-    }),
+    .withMessage(
+      'New password must contain at least one special character (@$!%*?&)'
+    ),
+  body('confirmPassword').custom((value, { req }) => {
+    if (value !== req.body.newPassword) {
+      throw new Error('Password confirmation does not match new password');
+    }
+    return true;
+  }),
   handleValidationErrors,
 ];
 
@@ -146,7 +153,9 @@ export const validateProfileUpdate = [
     .isLength({ min: 2, max: 50 })
     .withMessage('Name must be between 2 and 50 characters')
     .matches(/^[a-zA-Z\s'-]+$/)
-    .withMessage('Name can only contain letters, spaces, hyphens, and apostrophes')
+    .withMessage(
+      'Name can only contain letters, spaces, hyphens, and apostrophes'
+    )
     .trim(),
   handleValidationErrors,
 ];
@@ -174,4 +183,4 @@ export const sanitizeInput = (
   // Express-validator already handles basic sanitization
   // Additional custom sanitization can be added here if needed
   next();
-}; 
+};

@@ -1,5 +1,5 @@
-import { defineConfig } from 'vitest/config'
-import { fileURLToPath, URL } from 'node:url'
+import { defineConfig } from 'vitest/config';
+import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
   test: {
@@ -7,6 +7,9 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./src/test/setup.ts'],
     exclude: ['src/**/*.integration.test.ts'],
+    testTimeout: 15000, // 15 seconds for individual unit tests
+    hookTimeout: 90000, // 90 seconds for setup/teardown hooks
+    isolate: true, // Run tests in isolation
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
@@ -24,4 +27,4 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
-}) 
+});
