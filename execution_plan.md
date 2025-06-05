@@ -90,25 +90,25 @@
 **Duration**: 3 days
 
 #### User Service Implementation
-- [ ] User registration with email validation
-- [ ] JWT-based authentication system
-- [ ] Password hashing with bcrypt
-- [ ] User profile management
-- [ ] Role-based access control (RBAC) with Casbin
+- [x] User registration with email validation
+- [x] JWT-based authentication system
+- [x] Password hashing with bcrypt
+- [x] User profile management
+- [x] Role-based access control (RBAC) with Casbin
 
 #### API Endpoints (Auth Service)
-- [ ] `POST /api/auth/register` - User registration
-- [ ] `POST /api/auth/login` - User authentication
-- [ ] `POST /api/auth/refresh` - Token refresh
-- [ ] `POST /api/auth/logout` - User logout
-- [ ] `GET /api/auth/profile` - Get user profile
-- [ ] `PUT /api/auth/profile` - Update profile
+- [x] `POST /api/auth/register` - User registration
+- [x] `POST /api/auth/login` - User authentication
+- [x] `POST /api/auth/refresh` - Token refresh
+- [x] `POST /api/auth/logout` - User logout
+- [x] `GET /api/auth/profile` - Get user profile
+- [x] `PUT /api/auth/profile` - Update profile
 
 #### Security Implementation
-- [ ] JWT middleware for protected routes
-- [ ] Rate limiting for auth endpoints
-- [ ] Input validation and sanitization
-- [ ] Security headers middleware
+- [x] JWT middleware for protected routes
+- [x] Rate limiting for auth endpoints
+- [x] Input validation and sanitization
+- [x] Security headers middleware
 
 ### 2.2 Project Management Service
 **Duration**: 2 days
