@@ -5,8 +5,12 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { connectDatabase, checkDatabaseHealth } from '@/config/database';
+import { validateAuthConfig } from '@/config/auth';
 import { logger } from '@/utils/logger';
 import mongoose from 'mongoose';
+
+// Import routes
+import authRoutes from '@/routes/auth';
 
 // Load environment variables
 dotenv.config();
@@ -32,6 +36,15 @@ async function initializeDatabase() {
     logger.error('Failed to initialize database:', error);
     process.exit(1);
   }
+}
+
+// Validate authentication configuration
+try {
+  validateAuthConfig();
+  logger.info('Authentication configuration validated');
+} catch (error) {
+  logger.error('Authentication configuration validation failed:', error);
+  process.exit(1);
 }
 
 // Security middleware
@@ -76,8 +89,8 @@ app.get('/api', (_req, res) => {
   res.json({
     message: '🚀 Welcome to SaaS Blueprint Generator API',
     version: '1.0.0',
-    status: 'Phase 1.2 Complete - Database Schema & Models Ready',
-    nextPhase: 'Phase 2.1 - Authentication & User Management',
+    status: 'Phase 2.1 Complete - Authentication & User Management Ready',
+    nextPhase: 'Phase 2.2 - Project CRUD Operations',
     features: {
       completed: [
         'Express server setup',
@@ -89,13 +102,19 @@ app.get('/api', (_req, res) => {
         'Database models and schemas',
         'Data validation and indexing',
         'Database seed scripts',
+        'JWT authentication system',
+        'User registration and login',
+        'Token refresh mechanism',
+        'Password hashing and security',
+        'Role-based access control foundation',
+        'Input validation and sanitization',
+        'Authentication rate limiting',
       ],
       upcoming: [
-        'Authentication system',
-        'User management endpoints',
         'Project CRUD operations',
         'AI integration',
         'Blueprint generation engine',
+        'Real-time collaboration',
       ],
     },
     database: {
@@ -108,14 +127,30 @@ app.get('/api', (_req, res) => {
         'TechStackRecommendation',
         'Task',
         'Diagram',
+        'ProjectBoard',
+        'Blueprint',
+        'MCPAgent',
+        'ExternalIntegration',
       ],
     },
     endpoints: {
       health: '/health',
       api: '/api',
+      auth: {
+        register: 'POST /api/auth/register',
+        login: 'POST /api/auth/login',
+        refresh: 'POST /api/auth/refresh',
+        logout: 'POST /api/auth/logout',
+        profile: 'GET /api/auth/profile',
+        updateProfile: 'PUT /api/auth/profile',
+        changePassword: 'PUT /api/auth/password',
+      },
     },
   });
 });
+
+// Authentication routes
+app.use('/api/auth', authRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -156,6 +191,7 @@ if (process.env.NODE_ENV !== 'test') {
 🌐 Server running on: http://localhost:${PORT}
 🔗 API endpoint: http://localhost:${PORT}/api
 💊 Health check: http://localhost:${PORT}/health
+🔐 Authentication: http://localhost:${PORT}/api/auth
 🗄️  Database: MongoDB connected
 ⏰ Started at: ${new Date().toISOString()}
     `);

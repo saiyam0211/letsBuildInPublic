@@ -19,7 +19,9 @@
     "test:coverage": "NODE_ENV=test vitest run --coverage",
     "typecheck:backend": "tsc --noEmit",
     "db:migrate": "tsx src/scripts/migrate.ts",
-    "db:seed": "tsx src/scripts/seed.ts"
+    "db:seed": "tsx src/scripts/seed.ts",
+    "download:mongo-binary": "tsx src/scripts/download-mongo-binary.ts",
+    "ci:setup": "npm run download:mongo-binary"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -58,7 +60,7 @@
     "@vitest/coverage-v8": "^0.34.6",
     "eslint": "^8.53.0",
     "globals": "^13.24.0",
-    "mongodb-memory-server": "^9.5.0",
+    "mongodb-memory-server": "^10.1.4",
     "prettier": "^3.1.0",
     "supertest": "^6.3.3",
     "tsx": "^4.6.0",

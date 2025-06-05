@@ -1,4 +1,5 @@
 # 🚀 Development Workflow Guide
+
 ## SaaS Blueprint Generator Platform
 
 ### 📋 Repository Overview
@@ -18,6 +19,7 @@ main branch (protected) ← Production-ready code
 ```
 
 ### Current Files
+
 - `.github/CODEOWNERS` - Automatic reviewer assignments
 - `.github/pull_request_template.md` - Structured PR template
 - `.gitignore` - Git ignore rules (excludes documentation files)
@@ -38,6 +40,7 @@ git checkout -b feature/your-feature-name
 ```
 
 **Feature Branch Naming Convention:**
+
 - `feature/user-authentication`
 - `feature/blueprint-generator`
 - `feature/ai-integration`
@@ -64,6 +67,8 @@ gh pr create --base develop \
   --title "Add user authentication" \
   --body "Description of changes, testing notes, etc."
 
+
+
 # GitHub automatically assigns @saiyam0211 as reviewer (CODEOWNERS)
 # Review, approve, and merge through GitHub UI
 ```
@@ -86,6 +91,7 @@ gh pr create --base main \
 ## 🛡️ Branch Protection Rules
 
 ### Main Branch Protection
+
 - ✅ Requires pull requests for changes
 - ✅ Requires 1 approving review
 - ✅ Enforces linear history
@@ -94,6 +100,7 @@ gh pr create --base main \
 - ✅ Conversation resolution required
 
 ### Develop Branch Protection
+
 - ✅ Requires pull requests for changes
 - ✅ Requires 1 approving review
 - ✅ Prevents force pushes
@@ -105,6 +112,7 @@ gh pr create --base main \
 ## 📈 Phase-by-Phase Development Plan
 
 ### Phase 1: Foundation (Weeks 1-2) ✅
+
 - [x] Repository setup and branch protection
 - [x] GitHub configuration (CODEOWNERS, PR templates)
 - [ ] Database schema design
@@ -112,6 +120,7 @@ gh pr create --base main \
 - [ ] Basic authentication system
 
 **Next Features:**
+
 ```bash
 git checkout -b feature/database-schema
 git checkout -b feature/environment-config
@@ -119,6 +128,7 @@ git checkout -b feature/auth-system
 ```
 
 ### Phase 2: Core Platform (Weeks 3-8)
+
 - [ ] AI integration (OpenAI API)
 - [ ] Blueprint generator engine
 - [ ] Template system
@@ -126,6 +136,7 @@ git checkout -b feature/auth-system
 - [ ] User dashboard
 
 **Features:**
+
 ```bash
 git checkout -b feature/ai-integration
 git checkout -b feature/blueprint-engine
@@ -135,6 +146,7 @@ git checkout -b feature/user-dashboard
 ```
 
 ### Phase 3: Advanced Features (Weeks 9-16)
+
 - [ ] Advanced AI capabilities
 - [ ] Export functionality (PDF, code)
 - [ ] Collaboration tools
@@ -142,6 +154,7 @@ git checkout -b feature/user-dashboard
 - [ ] Analytics and tracking
 
 **Features:**
+
 ```bash
 git checkout -b feature/advanced-ai
 git checkout -b feature/export-system
@@ -151,6 +164,7 @@ git checkout -b feature/analytics
 ```
 
 ### Phase 4: Polish & Launch (Weeks 17-22)
+
 - [ ] Performance optimization
 - [ ] Security enhancements
 - [ ] User testing improvements
@@ -158,6 +172,7 @@ git checkout -b feature/analytics
 - [ ] Monitoring and logging
 
 **Features:**
+
 ```bash
 git checkout -b feature/performance-optimization
 git checkout -b feature/security-enhancements
@@ -170,6 +185,7 @@ git checkout -b feature/monitoring-setup
 ## 📝 Daily Workflow Example
 
 ### Morning Routine
+
 ```bash
 # Start your day
 git checkout develop
@@ -178,6 +194,7 @@ git checkout -b feature/blueprint-templates
 ```
 
 ### Development Work
+
 ```bash
 # Regular commits throughout the day
 git add src/templates/
@@ -191,6 +208,7 @@ git commit -m "docs: update template documentation"
 ```
 
 ### End of Day
+
 ```bash
 # Push your progress
 git push origin feature/blueprint-templates
@@ -199,7 +217,7 @@ git push origin feature/blueprint-templates
 gh pr create --base develop \
   --title "Add blueprint templates" \
   --body "- Add template structure
-- Add validation logic  
+- Add validation logic
 - Include unit tests
 - Update documentation"
 ```
@@ -209,18 +227,21 @@ gh pr create --base develop \
 ## 🔀 Pull Request Process
 
 ### Automatic Features
+
 - 🤖 **Auto-assignment**: @saiyam0211 automatically assigned as reviewer
 - 📝 **PR Template**: Structured template with checklists
 - 🛡️ **Protection**: Cannot merge without approval
 - ✅ **Status Checks**: Will be added when CI/CD is implemented
 
 ### PR Workflow
+
 1. **Create PR** → Auto-assigns reviewer
 2. **Self-Review** → Thoroughly check your code
 3. **Approve & Merge** → Use GitHub interface
 4. **Cleanup** → Delete feature branch automatically
 
 ### PR Title Conventions
+
 - `feat: add user authentication system`
 - `fix: resolve blueprint generation bug`
 - `docs: update API documentation`
@@ -232,6 +253,7 @@ gh pr create --base develop \
 ## 🛠️ Development Stack & Tools
 
 ### Tech Stack (Planned)
+
 - **Frontend**: React, TypeScript, Tailwind CSS
 - **Backend**: Node.js, Express, TypeScript
 - **Database**: PostgreSQL, Prisma ORM
@@ -240,6 +262,7 @@ gh pr create --base develop \
 - **Deployment**: Vercel/Netlify, Railway/Heroku
 
 ### Development Tools
+
 - **Git**: Version control and collaboration
 - **GitHub**: Repository hosting and project management
 - **GitHub CLI**: Command-line GitHub operations
@@ -251,6 +274,7 @@ gh pr create --base develop \
 ## 🚀 Quick Commands Cheat Sheet
 
 ### Branch Operations
+
 ```bash
 # Start new feature
 git checkout develop && git pull && git checkout -b feature/name
@@ -265,6 +289,7 @@ git pull origin develop
 ```
 
 ### Development Commands
+
 ```bash
 # Stage and commit changes
 git add .
@@ -278,6 +303,7 @@ git push -u origin feature/name
 ```
 
 ### GitHub CLI Commands
+
 ```bash
 # Create pull request
 gh pr create --base develop --title "Title" --body "Description"
@@ -293,6 +319,7 @@ gh pr merge --squash --delete-branch
 ```
 
 ### Repository Maintenance
+
 ```bash
 # Update develop after merges
 git checkout develop && git pull origin develop
@@ -309,7 +336,9 @@ gh api repos/saiyam0211/letsBuildInPublic/branches/main/protection
 ## 📋 Best Practices
 
 ### Commit Messages
+
 Follow [Conventional Commits](https://www.conventionalcommits.org/):
+
 - `feat:` - New features
 - `fix:` - Bug fixes
 - `docs:` - Documentation changes
@@ -319,18 +348,21 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 - `chore:` - Maintenance tasks
 
 ### Branch Management
+
 - Keep feature branches small and focused
 - Delete branches after merging
 - Regularly update from develop
 - Use descriptive branch names
 
 ### Code Quality
+
 - Write self-documenting code
 - Add comments for complex logic
 - Include unit tests for new features
 - Update documentation as needed
 
 ### Pull Requests
+
 - Use the PR template
 - Provide clear descriptions
 - Include testing instructions
@@ -351,12 +383,14 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 ## 🎯 Success Metrics
 
 ### Development Metrics
+
 - All changes go through PR process
 - No direct pushes to protected branches
 - Regular commits and progress updates
 - Clean, documented code
 
 ### Project Metrics
+
 - Weekly feature deliveries
 - Consistent progress toward milestones
 - High code quality and test coverage
@@ -384,8 +418,8 @@ git checkout -b feature/database-schema
 
 ---
 
-*This workflow will evolve as the project grows and additional team members join. Keep this document updated with any process improvements.*
+_This workflow will evolve as the project grows and additional team members join. Keep this document updated with any process improvements._
 
 **Last Updated**: June 2025  
 **Version**: 1.0  
-**Author**: @saiyam0211 
+**Author**: @saiyam0211

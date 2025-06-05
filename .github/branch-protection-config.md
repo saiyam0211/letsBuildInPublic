@@ -1,9 +1,11 @@
 # Branch Protection Rules Configuration
 
 ## Overview
+
 This document outlines the branch protection rules for the SaaS Blueprint Generator Platform repository to ensure code quality, prevent direct pushes to main branches, and enforce proper code review processes.
 
 ## Branch Structure
+
 - `main` - Production-ready code
 - `develop` - Integration branch for features
 - `feature/*` - Individual feature branches
@@ -13,6 +15,7 @@ This document outlines the branch protection rules for the SaaS Blueprint Genera
 ## Protection Rules
 
 ### Main Branch Protection
+
 - **Require pull request reviews before merging**: ✅
   - Required number of reviewers: 1
   - Dismiss stale reviews when new commits are pushed: ✅
@@ -29,6 +32,7 @@ This document outlines the branch protection rules for the SaaS Blueprint Genera
 - **Allow deletions**: ❌
 
 ### Develop Branch Protection
+
 - **Require pull request reviews before merging**: ✅
   - Required number of reviewers: 1
   - Dismiss stale reviews when new commits are pushed: ✅
@@ -40,6 +44,7 @@ This document outlines the branch protection rules for the SaaS Blueprint Genera
 - **Allow deletions**: ❌
 
 ### Feature Branch Protection
+
 - **Require status checks to pass before merging**: ✅
 - **Require branches to be up to date before merging**: ✅
 - **Allow force pushes**: ✅ (for feature development)
@@ -54,14 +59,17 @@ This document outlines the branch protection rules for the SaaS Blueprint Genera
 3. Click **Add rule** for each branch pattern
 
 #### Main Branch Rule:
+
 - Branch name pattern: `main`
 - Configure all protection rules as listed above
 
 #### Develop Branch Rule:
+
 - Branch name pattern: `develop`
 - Configure protection rules as listed above
 
 #### Feature Branch Rule:
+
 - Branch name pattern: `feature/*`
 - Configure basic protection rules
 
@@ -131,11 +139,13 @@ These branch protection rules work with the following GitHub Actions workflows:
 ## Best Practices
 
 1. **Feature Development Flow**:
+
    ```
    feature/xyz → develop → main
    ```
 
 2. **Hotfix Flow**:
+
    ```
    hotfix/critical-bug → main → develop
    ```
@@ -156,11 +166,13 @@ After setting up protection rules, verify by:
 ## Troubleshooting
 
 ### Common Issues:
+
 - **Admin bypass**: Ensure "Include administrators" is checked
 - **Missing status checks**: Verify GitHub Actions are properly configured
 - **Token permissions**: Ensure your GitHub token has repository admin access
 
 ### Required Permissions:
+
 - Repository admin access
 - Push access to protected branches
-- GitHub Actions enabled 
+- GitHub Actions enabled
