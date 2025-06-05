@@ -3,12 +3,16 @@ import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { logger } from '@/utils/logger';
+import { setupCIEnvironment, cleanupLockFiles } from './ci-setup';
 import path from 'path';
 import fs from 'fs';
 
 let mongoServer: MongoMemoryServer;
 
 beforeAll(async () => {
+  // Setup CI environment if running in CI
+  setupCIEnvironment();
+
   // Setup in-memory MongoDB for unit testing
   try {
     // Create unique cache directory for CI environments to avoid lockfile conflicts
@@ -76,8 +80,10 @@ afterAll(async () => {
       logger.info('MongoDB Memory Server stopped');
     }
 
-    // Clean up lock files in CI environment
+    // Clean up lock files and cache directory in CI environment
     if (process.env.CI) {
+      cleanupLockFiles();
+
       const cacheDir = `/tmp/mongo-binaries-unit-${process.env.GITHUB_RUN_ID || Date.now()}`;
       try {
         if (fs.existsSync(cacheDir)) {

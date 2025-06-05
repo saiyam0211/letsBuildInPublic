@@ -19,7 +19,9 @@
     "test:coverage": "NODE_ENV=test vitest run --coverage",
     "typecheck:backend": "tsc --noEmit",
     "db:migrate": "tsx src/scripts/migrate.ts",
-    "db:seed": "tsx src/scripts/seed.ts"
+    "db:seed": "tsx src/scripts/seed.ts",
+    "download:mongo-binary": "tsx src/scripts/download-mongo-binary.ts",
+    "ci:setup": "npm run download:mongo-binary"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

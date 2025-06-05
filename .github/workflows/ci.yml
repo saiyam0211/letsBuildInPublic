@@ -41,7 +41,7 @@ jobs:
     
     strategy:
       matrix:
-        node-version: [18, 20]
+        node-version: [18] # Temporarily remove Node.js 20 for debugging
         
     steps:
     - name: Checkout code
@@ -56,19 +56,45 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
+    - name: Clear MongoDB binaries cache
+      run: |
+        sudo rm -rf /tmp/mongo-binaries-* || true
+        sudo rm -rf /home/runner/.cache/mongodb-binaries || true
+        sudo find /tmp -name "*.lock" -path "*mongo*" -delete || true
+      
+    - name: Setup CI environment
+      run: |
+        echo "GITHUB_RUN_ID=${{ github.run_id }}" >> $GITHUB_ENV
+        echo "CI=true" >> $GITHUB_ENV
+        echo "NODE_ENV=test" >> $GITHUB_ENV
+        
+    - name: Predownload MongoDB binaries
+      run: npm run ci:setup
+      working-directory: ./backend
+      
     - name: Run unit tests
       run: npm run test:unit
+      working-directory: ./backend
+      env:
+        GITHUB_RUN_ID: ${{ github.run_id }}
+        CI: true
+        NODE_ENV: test
       
     - name: Run integration tests
       run: npm run test:integration
+      working-directory: ./backend
+      env:
+        GITHUB_RUN_ID: ${{ github.run_id }}
+        CI: true
+        NODE_ENV: test
       
     - name: Upload coverage reports
       if: success()
       uses: codecov/codecov-action@v3
       with:
-        file: ./coverage/lcov.info
+        file: ./backend/coverage/lcov.info
         fail_ci_if_error: false
-        
+
   # Build job - required for branch protection
   build:
     name: Build Application

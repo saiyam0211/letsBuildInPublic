@@ -69,13 +69,28 @@ export class AuthService {
    */
   static verifyAccessToken(token: string): TokenPayload {
     try {
+      if (!token || typeof token !== 'string') {
+        throw new Error('Token is required and must be a string');
+      }
+
       return jwt.verify(token, authConfig.jwt.secret, {
         issuer: 'saas-blueprint-generator',
         audience: 'saas-blueprint-users',
       }) as TokenPayload;
     } catch (error) {
-      logger.error('Access token verification failed:', error);
-      throw new Error('Invalid or expired token');
+      if (error instanceof jwt.TokenExpiredError) {
+        logger.error('Access token has expired:', error);
+        throw new Error('Access token has expired');
+      } else if (error instanceof jwt.JsonWebTokenError) {
+        logger.error('Malformed access token:', error);
+        throw new Error('Malformed access token');
+      } else if (error instanceof jwt.NotBeforeError) {
+        logger.error('Access token not active yet:', error);
+        throw new Error('Access token not active yet');
+      } else {
+        logger.error('Access token verification failed:', error);
+        throw new Error('Invalid access token');
+      }
     }
   }
 
@@ -84,13 +99,28 @@ export class AuthService {
    */
   static verifyRefreshToken(token: string): TokenPayload {
     try {
+      if (!token || typeof token !== 'string') {
+        throw new Error('Refresh token is required and must be a string');
+      }
+
       return jwt.verify(token, authConfig.jwt.refreshSecret, {
         issuer: 'saas-blueprint-generator',
         audience: 'saas-blueprint-users',
       }) as TokenPayload;
     } catch (error) {
-      logger.error('Refresh token verification failed:', error);
-      throw new Error('Invalid or expired refresh token');
+      if (error instanceof jwt.TokenExpiredError) {
+        logger.error('Refresh token has expired:', error);
+        throw new Error('Refresh token has expired');
+      } else if (error instanceof jwt.JsonWebTokenError) {
+        logger.error('Malformed refresh token:', error);
+        throw new Error('Malformed refresh token');
+      } else if (error instanceof jwt.NotBeforeError) {
+        logger.error('Refresh token not active yet:', error);
+        throw new Error('Refresh token not active yet');
+      } else {
+        logger.error('Refresh token verification failed:', error);
+        throw new Error('Invalid refresh token');
+      }
     }
   }
 
