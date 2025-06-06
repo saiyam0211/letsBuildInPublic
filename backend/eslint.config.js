@@ -38,6 +38,40 @@ export default [
       'no-var': 'error',
     },
   },
+  // Special rules for test files
+  {
+    files: ['**/*.test.ts', '**/*.spec.ts', 'src/test/**/*.ts', 'src/tests/**/*.ts'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      globals: {
+        ...globals.node,
+        ...globals.jest,
+      },
+      parser: tsParser,
+      parserOptions: {
+        sourceType: 'module',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tseslint,
+    },
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          'argsIgnorePattern': '^_',
+          'varsIgnorePattern': '^_',
+          'args': 'after-used',
+          'ignoreRestSiblings': true
+        }
+      ],
+      '@typescript-eslint/no-explicit-any': 'warn',
+      'no-unused-vars': 'off',
+      'no-console': 'off',
+      'prefer-const': 'error',
+      'no-var': 'error',
+    },
+  },
   // Special rules for Mongoose model files
   {
     files: ['src/models/*.ts'],

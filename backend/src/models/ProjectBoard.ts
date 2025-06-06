@@ -144,7 +144,6 @@ const projectBoardSchema = new Schema<IProjectBoard>(
 );
 
 // Indexes
-projectBoardSchema.index({ projectId: 1 });
 projectBoardSchema.index({ isActive: 1 });
 projectBoardSchema.index({ projectId: 1, isActive: 1 });
 projectBoardSchema.index({ createdAt: -1 });

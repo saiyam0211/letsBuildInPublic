@@ -115,9 +115,9 @@ gh pr create --base main \
 
 - [x] Repository setup and branch protection
 - [x] GitHub configuration (CODEOWNERS, PR templates)
-- [ ] Database schema design
-- [ ] Environment configuration
-- [ ] Basic authentication system
+- [x] Database schema design
+- [x] Environment configuration
+- [x] Basic authentication system
 
 **Next Features:**
 

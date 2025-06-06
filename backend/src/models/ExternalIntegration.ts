@@ -409,14 +409,15 @@ const externalIntegrationSchema = new Schema<IExternalIntegration>(
 );
 
 // Indexes
-externalIntegrationSchema.index({ projectId: 1 });
 externalIntegrationSchema.index({ provider: 1 });
-externalIntegrationSchema.index({ category: 1 });
 externalIntegrationSchema.index({ status: 1 });
+externalIntegrationSchema.index({ isActive: 1 });
 externalIntegrationSchema.index({ projectId: 1, provider: 1 });
+externalIntegrationSchema.index({ 'credentials.apiKey': 1 });
+externalIntegrationSchema.index({ createdAt: -1 });
+externalIntegrationSchema.index({ category: 1 });
 externalIntegrationSchema.index({ 'syncConfig.enabled': 1 });
 externalIntegrationSchema.index({ 'syncConfig.nextSyncAt': 1 });
-externalIntegrationSchema.index({ createdAt: -1 });
 externalIntegrationSchema.index({ 'metadata.tags': 1 });
 
 // Method to log integration activity

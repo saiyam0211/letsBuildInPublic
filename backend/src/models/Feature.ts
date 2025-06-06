@@ -87,15 +87,15 @@ const featureSchema = new Schema<IFeature>(
 );
 
 // Indexes
-featureSchema.index({ projectId: 1 });
 featureSchema.index({ priority: 1 });
+featureSchema.index({ status: 1 });
 featureSchema.index({ category: 1 });
-featureSchema.index({ complexity: 1 });
 featureSchema.index({ projectId: 1, category: 1 });
 featureSchema.index({ projectId: 1, priority: 1 });
-featureSchema.index({ createdAt: -1 });
-
-// Compound index for efficient querying
+featureSchema.index({ userId: 1 });
+featureSchema.index({ status: 1, priority: 1 });
 featureSchema.index({ projectId: 1, category: 1, priority: 1 });
+featureSchema.index({ complexity: 1 });
+featureSchema.index({ createdAt: -1 });
 
 export const Feature = mongoose.model<IFeature>('Feature', featureSchema);

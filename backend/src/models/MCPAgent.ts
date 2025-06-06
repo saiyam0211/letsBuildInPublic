@@ -321,13 +321,13 @@ const mcpAgentSchema = new Schema<IMCPAgent>(
 );
 
 // Indexes
-mcpAgentSchema.index({ projectId: 1 });
-mcpAgentSchema.index({ type: 1 });
+mcpAgentSchema.index({ name: 1 });
 mcpAgentSchema.index({ status: 1 });
-mcpAgentSchema.index({ 'metadata.isPublic': 1 });
-mcpAgentSchema.index({ 'metadata.tags': 1 });
+mcpAgentSchema.index({ type: 1 });
+mcpAgentSchema.index({ isActive: 1 });
 mcpAgentSchema.index({ createdAt: -1 });
-mcpAgentSchema.index({ 'performance.lastExecutedAt': -1 });
+mcpAgentSchema.index({ lastActiveAt: -1 });
+mcpAgentSchema.index({ 'config.autoStart': 1 });
 mcpAgentSchema.index({ projectId: 1, type: 1 });
 
 // Method to log execution

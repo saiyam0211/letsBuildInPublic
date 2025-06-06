@@ -91,16 +91,15 @@ const taskSchema = new Schema<ITask>(
 );
 
 // Indexes
-taskSchema.index({ projectId: 1 });
 taskSchema.index({ status: 1 });
 taskSchema.index({ priority: 1 });
 taskSchema.index({ assigneeId: 1 });
 taskSchema.index({ featureId: 1 });
 taskSchema.index({ projectId: 1, status: 1 });
 taskSchema.index({ projectId: 1, assigneeId: 1 });
-taskSchema.index({ createdAt: -1 });
-
-// Compound indexes for efficient querying
+taskSchema.index({ assigneeId: 1, status: 1 });
+// Compound index for complex queries
 taskSchema.index({ projectId: 1, status: 1, priority: 1 });
+taskSchema.index({ createdAt: -1 });
 
 export const Task = mongoose.model<ITask>('Task', taskSchema);
