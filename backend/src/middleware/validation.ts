@@ -14,9 +14,9 @@ export const handleValidationErrors = (
 
   if (!errors.isEmpty()) {
     res.status(400).json({
-      error: 'Validation failed',
-      message: 'Invalid input data',
-      details: errors.array().map(error => ({
+      success: false,
+      message: 'Validation failed',
+      errors: errors.array().map(error => ({
         field: error.type === 'field' ? error.path : 'unknown',
         message: error.msg,
         value: error.type === 'field' ? error.value : undefined,

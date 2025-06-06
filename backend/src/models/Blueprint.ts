@@ -291,15 +291,13 @@ const blueprintSchema = new Schema<IBlueprint>(
   }
 );
 
-// Indexes
-blueprintSchema.index({ projectId: 1 });
+// Indexes for efficient queries
+blueprintSchema.index({ userId: 1 });
+blueprintSchema.index({ category: 1 });
 blueprintSchema.index({ status: 1 });
-blueprintSchema.index({ type: 1 });
-blueprintSchema.index({ 'shareSettings.isPublic': 1 });
-blueprintSchema.index({ tags: 1 });
-blueprintSchema.index({ downloadCount: -1 });
+blueprintSchema.index({ isPublic: 1 });
 blueprintSchema.index({ createdAt: -1 });
-blueprintSchema.index({ lastAccessedAt: -1 });
+blueprintSchema.index({ updatedAt: -1 });
 
 // Method to calculate completion percentage
 blueprintSchema.methods.getCompletionPercentage = function (

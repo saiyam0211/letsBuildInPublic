@@ -126,14 +126,13 @@ const diagramSchema = new Schema<IDiagram>(
   }
 );
 
-// Indexes
-diagramSchema.index({ projectId: 1 });
+// Indexes for efficient queries
 diagramSchema.index({ type: 1 });
-diagramSchema.index({ format: 1 });
+diagramSchema.index({ status: 1 });
+diagramSchema.index({ isPublic: 1 });
 diagramSchema.index({ projectId: 1, type: 1 });
 diagramSchema.index({ createdAt: -1 });
-
-// Compound index for efficient querying
+diagramSchema.index({ updatedAt: -1 });
 diagramSchema.index({ projectId: 1, type: 1, 'metadata.version': -1 });
 
 // Pre-save middleware to auto-calculate complexity

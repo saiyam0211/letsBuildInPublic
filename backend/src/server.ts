@@ -11,6 +11,8 @@ import mongoose from 'mongoose';
 
 // Import routes
 import authRoutes from '@/routes/auth';
+import projectRoutes from '@/routes/projects';
+import collaborationRoutes from '@/routes/collaboration';
 
 // Load environment variables
 dotenv.config();
@@ -89,8 +91,8 @@ app.get('/api', (_req, res) => {
   res.json({
     message: '🚀 Welcome to SaaS Blueprint Generator API',
     version: '1.0.0',
-    status: 'Phase 2.1 Complete - Authentication & User Management Ready',
-    nextPhase: 'Phase 2.2 - Project CRUD Operations',
+    status: 'Phase 2.2 Complete - Project Management Service Ready',
+    nextPhase: 'Phase 2.3 - SaaS Idea Service',
     features: {
       completed: [
         'Express server setup',
@@ -109,9 +111,13 @@ app.get('/api', (_req, res) => {
         'Role-based access control foundation',
         'Input validation and sanitization',
         'Authentication rate limiting',
+        'Project CRUD operations',
+        'Project management API',
+        'Project overview and analytics',
+        'User project filtering and pagination',
       ],
       upcoming: [
-        'Project CRUD operations',
+        'SaaS Idea submission and processing',
         'AI integration',
         'Blueprint generation engine',
         'Real-time collaboration',
@@ -145,12 +151,26 @@ app.get('/api', (_req, res) => {
         updateProfile: 'PUT /api/auth/profile',
         changePassword: 'PUT /api/auth/password',
       },
+      projects: {
+        create: 'POST /api/projects',
+        list: 'GET /api/projects',
+        details: 'GET /api/projects/:id',
+        update: 'PUT /api/projects/:id',
+        delete: 'DELETE /api/projects/:id',
+        overview: 'GET /api/projects/:id/overview',
+      },
     },
   });
 });
 
 // Authentication routes
 app.use('/api/auth', authRoutes);
+
+// Project management routes
+app.use('/api/projects', projectRoutes);
+
+// Collaboration routes
+app.use('/api', collaborationRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

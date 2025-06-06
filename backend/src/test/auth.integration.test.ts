@@ -48,8 +48,9 @@ describe('Authentication API Integration Tests', () => {
         .send(invalidData)
         .expect(400);
 
-      expect(response.body.error).toBe('Validation failed');
-      expect(response.body.details).toBeDefined();
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Validation failed');
+      expect(response.body.errors).toBeDefined();
     });
 
     it('should return error if user already exists', async () => {
@@ -124,7 +125,8 @@ describe('Authentication API Integration Tests', () => {
         .send(credentials)
         .expect(400);
 
-      expect(response.body.error).toBe('Validation failed');
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Validation failed');
     });
   });
 
@@ -236,7 +238,8 @@ describe('Authentication API Integration Tests', () => {
         .send({ refreshToken: 'invalid-token' })
         .expect(400);
 
-      expect(response.body.error).toBe('Validation failed');
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Validation failed');
     });
   });
 
