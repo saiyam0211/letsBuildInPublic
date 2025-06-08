@@ -31,10 +31,19 @@ export default [
     rules: {
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': [
-        'warn',
+        'off',
         { allowConstantExport: true },
       ],
-      '@typescript-eslint/no-unused-vars': 'error',
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error', 
+        { 
+          'argsIgnorePattern': '^_',
+          'varsIgnorePattern': '^_|^React$',
+          'ignoreRestSiblings': true,
+          'args': 'after-used'
+        }
+      ],
       '@typescript-eslint/no-explicit-any': 'warn',
       'no-console': 'warn',
     },

@@ -1,14 +1,23 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId;
   email: string;
   password: string;
   name: string;
+  isEmailVerified: boolean;
+  emailVerificationToken?: string;
+  emailVerificationExpires?: Date;
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
+  role: 'user' | 'admin';
   createdAt: Date;
   updatedAt: Date;
   comparePassword(password: string): Promise<boolean>;
+  generateEmailVerificationToken(): string;
+  generatePasswordResetToken(): string;
 }
 
 const userSchema = new Schema<IUser>(
@@ -39,6 +48,31 @@ const userSchema = new Schema<IUser>(
       minlength: [2, 'Name must be at least 2 characters long'],
       maxlength: [50, 'Name cannot exceed 50 characters'],
     },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerificationToken: {
+      type: String,
+      select: false,
+    },
+    emailVerificationExpires: {
+      type: Date,
+      select: false,
+    },
+    passwordResetToken: {
+      type: String,
+      select: false,
+    },
+    passwordResetExpires: {
+      type: Date,
+      select: false,
+    },
+    role: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'user',
+    },
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt
@@ -48,6 +82,10 @@ const userSchema = new Schema<IUser>(
         ret.userId = ret._id;
         delete ret._id;
         delete ret.password;
+        delete ret.emailVerificationToken;
+        delete ret.emailVerificationExpires;
+        delete ret.passwordResetToken;
+        delete ret.passwordResetExpires;
         return ret;
       },
     },
@@ -56,6 +94,8 @@ const userSchema = new Schema<IUser>(
 
 // Indexes
 userSchema.index({ createdAt: -1 });
+userSchema.index({ emailVerificationToken: 1 });
+userSchema.index({ passwordResetToken: 1 });
 
 // Pre-save middleware to hash password
 userSchema.pre('save', async function (this: IUser, next) {
@@ -89,6 +129,30 @@ userSchema.methods.comparePassword = async function (
 // Static method for finding user by email (including password)
 userSchema.statics.findByEmail = function (email: string) {
   return this.findOne({ email }).select('+password');
+};
+
+// Instance method to generate email verification token
+userSchema.methods.generateEmailVerificationToken = function (
+  this: IUser
+): string {
+  const token = crypto.randomBytes(32).toString('hex');
+  this.emailVerificationToken = crypto
+    .createHash('sha256')
+    .update(token)
+    .digest('hex');
+  this.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+  return token;
+};
+
+// Instance method to generate password reset token
+userSchema.methods.generatePasswordResetToken = function (this: IUser): string {
+  const token = crypto.randomBytes(32).toString('hex');
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(token)
+    .digest('hex');
+  this.passwordResetExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+  return token;
 };
 
 export const User = mongoose.model<IUser>('User', userSchema);

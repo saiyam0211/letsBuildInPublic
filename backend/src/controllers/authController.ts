@@ -343,3 +343,243 @@ export const changePassword = async (
     });
   }
 };
+
+/**
+ * Verify email with token
+ * GET /api/auth/verify-email/:token
+ */
+export const verifyEmail = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { token } = req.params;
+
+    if (!token) {
+      res.status(400).json({
+        error: 'Verification failed',
+        message: 'Verification token is required',
+      });
+      return;
+    }
+
+    const user = await AuthService.verifyEmail(token);
+
+    res.status(200).json({
+      success: true,
+      message: 'Email verified successfully',
+      data: {
+        user,
+      },
+    });
+
+    logger.info(`Email verified for user: ${user.email}`);
+  } catch (error) {
+    logger.error('Email verification failed:', error);
+
+    if (error instanceof Error) {
+      if (error.message.includes('Invalid or expired')) {
+        res.status(400).json({
+          error: 'Verification failed',
+          message: 'Invalid or expired verification token',
+        });
+        return;
+      }
+    }
+
+    res.status(500).json({
+      error: 'Verification failed',
+      message: 'An unexpected error occurred during email verification',
+    });
+  }
+};
+
+/**
+ * Resend email verification
+ * POST /api/auth/resend-verification
+ */
+export const resendEmailVerification = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      res.status(400).json({
+        error: 'Resend verification failed',
+        message: 'Email is required',
+      });
+      return;
+    }
+
+    await AuthService.resendEmailVerification(email);
+
+    res.status(200).json({
+      success: true,
+      message: 'Verification email sent successfully',
+    });
+
+    logger.info(`Verification email resent to: ${email}`);
+  } catch (error) {
+    logger.error('Resend verification failed:', error);
+
+    if (error instanceof Error) {
+      if (error.message.includes('User not found')) {
+        res.status(404).json({
+          error: 'Resend verification failed',
+          message: 'User not found',
+        });
+        return;
+      }
+
+      if (error.message.includes('already verified')) {
+        res.status(400).json({
+          error: 'Resend verification failed',
+          message: 'Email is already verified',
+        });
+        return;
+      }
+    }
+
+    res.status(500).json({
+      error: 'Resend verification failed',
+      message:
+        'An unexpected error occurred while resending verification email',
+    });
+  }
+};
+
+/**
+ * Request password reset
+ * POST /api/auth/forgot-password
+ */
+export const forgotPassword = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      res.status(400).json({
+        error: 'Password reset failed',
+        message: 'Email is required',
+      });
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      res.status(400).json({
+        error: 'Password reset failed',
+        message: 'Please provide a valid email address',
+      });
+      return;
+    }
+
+    await AuthService.forgotPassword(email);
+
+    // Always return success for security reasons (don't reveal if email exists)
+    res.status(200).json({
+      success: true,
+      message:
+        'If your email address exists in our system, you will receive a password reset link shortly',
+    });
+
+    logger.info(`Password reset requested for: ${email}`);
+  } catch (error) {
+    logger.error('Password reset request failed:', error);
+
+    res.status(500).json({
+      error: 'Password reset failed',
+      message:
+        'An unexpected error occurred while processing password reset request',
+    });
+  }
+};
+
+/**
+ * Reset password with token
+ * POST /api/auth/reset-password
+ */
+export const resetPassword = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { token, newPassword, confirmPassword } = req.body;
+
+    if (!token) {
+      res.status(400).json({
+        error: 'Password reset failed',
+        message: 'Reset token is required',
+      });
+      return;
+    }
+
+    if (!newPassword) {
+      res.status(400).json({
+        error: 'Password reset failed',
+        message: 'New password is required',
+      });
+      return;
+    }
+
+    if (!confirmPassword) {
+      res.status(400).json({
+        error: 'Password reset failed',
+        message: 'Password confirmation is required',
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      res.status(400).json({
+        error: 'Password reset failed',
+        message: 'Passwords do not match',
+      });
+      return;
+    }
+
+    // Password strength validation
+    if (newPassword.length < 8) {
+      res.status(400).json({
+        error: 'Password reset failed',
+        message: 'Password must be at least 8 characters long',
+      });
+      return;
+    }
+
+    await AuthService.resetPassword(token, newPassword);
+
+    res.status(200).json({
+      success: true,
+      message:
+        'Password reset successfully. You can now login with your new password',
+    });
+
+    logger.info(
+      `Password reset completed for token: ${token.substring(0, 10)}...`
+    );
+  } catch (error) {
+    logger.error('Password reset failed:', error);
+
+    if (error instanceof Error) {
+      if (error.message.includes('Invalid or expired')) {
+        res.status(400).json({
+          error: 'Password reset failed',
+          message:
+            'Invalid or expired password reset token. Please request a new password reset',
+        });
+        return;
+      }
+    }
+
+    res.status(500).json({
+      error: 'Password reset failed',
+      message: 'An unexpected error occurred while resetting password',
+    });
+  }
+};

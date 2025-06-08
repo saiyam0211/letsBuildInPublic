@@ -7,6 +7,10 @@ import {
   getProfile,
   updateProfile,
   changePassword,
+  verifyEmail,
+  resendEmailVerification,
+  forgotPassword,
+  resetPassword,
 } from '@/controllers/authController';
 import {
   validateRegistration,
@@ -14,6 +18,9 @@ import {
   validateRefreshToken,
   validateProfileUpdate,
   validatePasswordChange,
+  validateForgotPassword,
+  validateResetPassword,
+  validateResendVerification,
 } from '@/middleware/validation';
 import {
   authRateLimit,
@@ -90,6 +97,45 @@ router.put(
   generalAuthRateLimit,
   validatePasswordChange,
   changePassword
+);
+
+/**
+ * GET /api/auth/verify-email/:token
+ * Verify user email with token
+ */
+router.get('/verify-email/:token', verifyEmail);
+
+/**
+ * POST /api/auth/resend-verification
+ * Resend email verification
+ */
+router.post(
+  '/resend-verification',
+  generalAuthRateLimit,
+  validateResendVerification,
+  resendEmailVerification
+);
+
+/**
+ * POST /api/auth/forgot-password
+ * Initiate password reset
+ */
+router.post(
+  '/forgot-password',
+  generalAuthRateLimit,
+  validateForgotPassword,
+  forgotPassword
+);
+
+/**
+ * POST /api/auth/reset-password
+ * Reset user password
+ */
+router.post(
+  '/reset-password',
+  generalAuthRateLimit,
+  validateResetPassword,
+  resetPassword
 );
 
 export default router;

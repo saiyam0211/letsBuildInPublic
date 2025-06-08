@@ -2,6 +2,7 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 import { User, IUser } from '@/models/User';
 import { authConfig } from '@/config/auth';
 import { logger } from '@/utils/logger';
+import { EmailService } from './emailService';
 
 export interface TokenPayload {
   userId: string;
@@ -145,7 +146,22 @@ export class AuthService {
         name: userData.name,
       });
 
+      // Generate email verification token
+      const verificationToken = user.generateEmailVerificationToken();
+
       await user.save();
+
+      // Send verification email
+      try {
+        await EmailService.sendVerificationEmail(
+          user.email,
+          user.name,
+          verificationToken
+        );
+      } catch (emailError) {
+        logger.error('Failed to send verification email:', emailError);
+        // Don't throw error - user is still registered, just email failed
+      }
 
       // Generate tokens
       const tokens = this.generateTokens(user);
@@ -298,6 +314,163 @@ export class AuthService {
       logger.info(`Password changed for user: ${user.email}`);
     } catch (error) {
       logger.error('Password change failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Verify email with token
+   */
+  static async verifyEmail(token: string): Promise<IUser> {
+    try {
+      // Hash the received token to compare with stored hash
+      const crypto = await import('crypto');
+      const hashedToken = crypto
+        .createHash('sha256')
+        .update(token)
+        .digest('hex');
+
+      // Find user with matching token that hasn't expired
+      const user = await User.findOne({
+        emailVerificationToken: hashedToken,
+        emailVerificationExpires: { $gt: new Date() },
+      }).select('+emailVerificationToken +emailVerificationExpires');
+
+      if (!user) {
+        throw new Error('Invalid or expired verification token');
+      }
+
+      // Mark email as verified and clear verification fields
+      await User.findByIdAndUpdate(user._id, {
+        $set: { isEmailVerified: true },
+        $unset: {
+          emailVerificationToken: 1,
+          emailVerificationExpires: 1,
+        },
+      });
+
+      logger.info(`Email verified for user: ${user.email}`);
+
+      // Refresh user object to reflect changes
+      const updatedUser = await User.findById(user._id);
+      if (!updatedUser) {
+        throw new Error('User not found after update');
+      }
+
+      return updatedUser;
+    } catch (error) {
+      logger.error('Email verification failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Resend email verification
+   */
+  static async resendEmailVerification(email: string): Promise<void> {
+    try {
+      const user = await User.findOne({ email });
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      if (user.isEmailVerified) {
+        throw new Error('Email is already verified');
+      }
+
+      // Generate new verification token
+      const verificationToken = user.generateEmailVerificationToken();
+      await user.save();
+
+      // Send verification email
+      await EmailService.sendVerificationEmail(
+        user.email,
+        user.name,
+        verificationToken
+      );
+
+      logger.info(`Verification email resent to: ${user.email}`);
+    } catch (error) {
+      logger.error('Failed to resend verification email:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Send password reset email
+   */
+  static async forgotPassword(email: string): Promise<void> {
+    try {
+      const user = await User.findOne({ email });
+
+      if (!user) {
+        // Don't reveal that the user doesn't exist for security reasons
+        // Still return success but don't send email
+        logger.info(
+          `Password reset requested for non-existent email: ${email}`
+        );
+        return;
+      }
+
+      // Generate password reset token
+      const resetToken = user.generatePasswordResetToken();
+      await user.save();
+
+      // Send password reset email
+      await EmailService.sendPasswordResetEmail(
+        user.email,
+        user.name,
+        resetToken
+      );
+
+      logger.info(`Password reset email sent to: ${user.email}`);
+    } catch (error) {
+      logger.error('Failed to send password reset email:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reset password with token
+   */
+  static async resetPassword(
+    token: string,
+    newPassword: string
+  ): Promise<void> {
+    try {
+      // Hash the received token to compare with stored hash
+      const crypto = await import('crypto');
+      const hashedToken = crypto
+        .createHash('sha256')
+        .update(token)
+        .digest('hex');
+
+      // Find user with matching token that hasn't expired
+      const user = await User.findOne({
+        passwordResetToken: hashedToken,
+        passwordResetExpires: { $gt: new Date() },
+      }).select('+passwordResetToken +passwordResetExpires');
+
+      if (!user) {
+        throw new Error('Invalid or expired password reset token');
+      }
+
+      // Update password and clear reset fields
+      user.password = newPassword;
+      await User.findByIdAndUpdate(user._id, {
+        $unset: {
+          passwordResetToken: 1,
+          passwordResetExpires: 1,
+        },
+      });
+
+      // Save the password (hashing is handled by pre-save middleware)
+      await user.save();
+
+      logger.info(`Password reset successful for user: ${user.email}`);
+    } catch (error) {
+      logger.error('Password reset failed:', error);
       throw error;
     }
   }
