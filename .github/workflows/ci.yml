@@ -97,37 +97,32 @@ jobs:
 
   # Build job - required for branch protection
   build:
-      build:
     name: Build Application
     runs-on: ubuntu-latest
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
+      
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
-
-    - name: Clean node_modules and package-lock
-      run: |
-        rm -rf node_modules package-lock.json
-
+        
     - name: Install dependencies
-      run: npm install
-
+      run: npm ci
+      
     - name: Build applications
       run: npm run build
-
+      
     - name: Check build outputs
       run: |
         echo "Frontend dist contents:"
         ls -la frontend/dist/ || echo "Frontend dist directory not found"
         echo "Backend dist contents:"
         ls -la backend/dist/ || echo "Backend dist directory not found"
-
+        
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
