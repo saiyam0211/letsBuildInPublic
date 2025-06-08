@@ -59,5 +59,12 @@
     "platform"
   ],
   "author": "Saiyam Singh",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.8.2",
+    "clsx": "^2.1.1",
+    "motion": "^12.16.0",
+    "react-redux": "^9.2.0",
+    "tailwind-merge": "^3.3.0"
+  }
 }

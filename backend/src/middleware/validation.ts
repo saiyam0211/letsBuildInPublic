@@ -173,6 +173,58 @@ export const validateRefreshToken = [
 ];
 
 /**
+ * Validation rules for forgot password
+ */
+export const validateForgotPassword = [
+  emailValidation(),
+  handleValidationErrors,
+];
+
+/**
+ * Validation rules for password reset
+ */
+export const validateResetPassword = [
+  body('token')
+    .notEmpty()
+    .withMessage('Reset token is required')
+    .isLength({ min: 32, max: 128 })
+    .withMessage('Invalid reset token format'),
+  body('newPassword')
+    .isLength({
+      min: authConfig.password.minLength,
+      max: authConfig.password.maxLength,
+    })
+    .withMessage(
+      `New password must be between ${authConfig.password.minLength} and ${authConfig.password.maxLength} characters`
+    )
+    .matches(/^(?=.*[a-z])/)
+    .withMessage('New password must contain at least one lowercase letter')
+    .matches(/^(?=.*[A-Z])/)
+    .withMessage('New password must contain at least one uppercase letter')
+    .matches(/^(?=.*\d)/)
+    .withMessage('New password must contain at least one number')
+    .matches(/^(?=.*[@$!%*?&])/)
+    .withMessage(
+      'New password must contain at least one special character (@$!%*?&)'
+    ),
+  body('confirmPassword').custom((value, { req }) => {
+    if (value !== req.body.newPassword) {
+      throw new Error('Password confirmation does not match new password');
+    }
+    return true;
+  }),
+  handleValidationErrors,
+];
+
+/**
+ * Validation rules for resend email verification
+ */
+export const validateResendVerification = [
+  emailValidation(),
+  handleValidationErrors,
+];
+
+/**
  * Sanitize user input to prevent XSS and other attacks
  */
 export const sanitizeInput = (
