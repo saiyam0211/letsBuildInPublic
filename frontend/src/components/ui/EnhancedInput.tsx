@@ -11,19 +11,23 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
     const radius = 100; // change this to increase the radius of the hover effect
     const [visible, setVisible] = React.useState(false);
 
-    let mouseX = useMotionValue(0);
-    let mouseY = useMotionValue(0);
+    // Declare motion values at the top level
+    const mouseX = useMotionValue(0);
+    const mouseY = useMotionValue(0);
 
-    function handleMouseMove({
-      currentTarget,
-      clientX,
-      clientY,
-    }: React.MouseEvent<HTMLDivElement>) {
-      let { left, top } = currentTarget.getBoundingClientRect();
+    const handleMouseMove = React.useCallback(
+      ({
+        currentTarget,
+        clientX,
+        clientY,
+      }: React.MouseEvent<HTMLDivElement>) => {
+        let { left, top } = currentTarget.getBoundingClientRect();
+        mouseX.set(clientX - left);
+        mouseY.set(clientY - top);
+      },
+      [mouseX, mouseY]
+    );
 
-      mouseX.set(clientX - left);
-      mouseY.set(clientY - top);
-    }
     return (
       <motion.div
         style={{
