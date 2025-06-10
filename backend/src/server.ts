@@ -1,4 +1,5 @@
 import express from 'express';
+import { createServer } from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -7,18 +8,25 @@ import dotenv from 'dotenv';
 import { connectDatabase, checkDatabaseHealth } from '@/config/database';
 import { validateAuthConfig } from '@/config/auth';
 import { logger } from '@/utils/logger';
+import { webSocketService } from '@/services/websocket';
+import { jobQueueService } from '@/services/jobQueue';
 import mongoose from 'mongoose';
 
 // Import routes
 import authRoutes from '@/routes/auth';
 import projectRoutes from '@/routes/projects';
 import collaborationRoutes from '@/routes/collaboration';
+import ideaProcessingRoutes from '@/routes/ideaProcessing';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
+const server = createServer(app);
 const PORT = process.env.PORT || 5000;
+
+// Initialize WebSocket server
+webSocketService.initialize(server);
 
 // Initialize database connection
 async function initializeDatabase() {
@@ -73,14 +81,29 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Health check endpoint with database status
+// Health check endpoint with enhanced status
 app.get('/health', async (_req, res) => {
   const dbHealthy = await checkDatabaseHealth();
+  const queueHealth = await jobQueueService.healthCheck();
+  const wsHealth = webSocketService.healthCheck();
 
-  res.status(dbHealthy ? 200 : 503).json({
-    status: dbHealthy ? 'OK' : 'Service Unavailable',
+  const allHealthy = dbHealthy && queueHealth.redis && queueHealth.queue && wsHealth.status;
+
+  res.status(allHealthy ? 200 : 503).json({
+    status: allHealthy ? 'OK' : 'Service Unavailable',
     message: 'SaaS Blueprint Generator API is running',
-    database: dbHealthy ? 'Connected' : 'Disconnected',
+    services: {
+      database: dbHealthy ? 'Connected' : 'Disconnected',
+      redis: queueHealth.redis ? 'Connected' : 'Disconnected',
+      jobQueue: queueHealth.queue ? 'Active' : 'Inactive',
+      webSocket: wsHealth.status ? 'Active' : 'Inactive',
+    },
+    metrics: {
+      activeJobs: queueHealth.activeJobs,
+      waitingJobs: queueHealth.waitingJobs,
+      connectedUsers: wsHealth.connectedUsers,
+      connectedSockets: wsHealth.connectedSockets,
+    },
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
   });
@@ -91,8 +114,8 @@ app.get('/api', (_req, res) => {
   res.json({
     message: '🚀 Welcome to SaaS Blueprint Generator API',
     version: '1.0.0',
-    status: 'Phase 2.2 Complete - Project Management Service Ready',
-    nextPhase: 'Phase 2.3 - SaaS Idea Service',
+    status: 'Week 4 Day 3 - Processing Pipeline Complete',
+    nextPhase: 'Week 4 Day 4 - Frontend Integration',
     features: {
       completed: [
         'Express server setup',
@@ -115,29 +138,26 @@ app.get('/api', (_req, res) => {
         'Project management API',
         'Project overview and analytics',
         'User project filtering and pagination',
+        'OpenAI integration service',
+        'AI-powered idea processing',
+        'Background job queue with Bull',
+        'WebSocket real-time updates',
+        'Result aggregation and confidence scoring',
+        'Comprehensive error handling and retry mechanisms',
       ],
       upcoming: [
-        'SaaS Idea submission and processing',
-        'AI integration',
+        'Frontend real-time dashboard',
         'Blueprint generation engine',
+        'Advanced AI features',
         'Real-time collaboration',
       ],
     },
-    database: {
-      models: [
-        'User',
-        'Project',
-        'SaasIdea',
-        'IdeaValidation',
-        'Feature',
-        'TechStackRecommendation',
-        'Task',
-        'Diagram',
-        'ProjectBoard',
-        'Blueprint',
-        'MCPAgent',
-        'ExternalIntegration',
-      ],
+    services: {
+      database: 'MongoDB with Mongoose',
+      cache: 'Redis with IORedis',
+      queue: 'Bull Queue for background processing',
+      websocket: 'Socket.IO for real-time communication',
+      ai: 'OpenAI GPT-4 for idea analysis',
     },
     endpoints: {
       health: '/health',
@@ -159,6 +179,16 @@ app.get('/api', (_req, res) => {
         delete: 'DELETE /api/projects/:id',
         overview: 'GET /api/projects/:id/overview',
       },
+      ideaProcessing: {
+        processAsync: 'POST /api/projects/:projectId/ideas/process',
+        processSync: 'POST /api/projects/:projectId/ideas/process-sync',
+        jobStatus: 'GET /api/jobs/:jobId/status',
+        cancelJob: 'DELETE /api/jobs/:jobId',
+        myJobs: 'GET /api/jobs/my-jobs',
+        latestResult: 'GET /api/projects/:projectId/ideas/latest',
+        queueStats: 'GET /api/queue/stats',
+        queueHealth: 'GET /api/queue/health',
+      },
     },
   });
 });
@@ -171,6 +201,9 @@ app.use('/api/projects', projectRoutes);
 
 // Collaboration routes
 app.use('/api', collaborationRoutes);
+
+// Idea processing routes
+app.use('/api', ideaProcessingRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -204,7 +237,7 @@ app.use((err: HttpError, _req: express.Request, res: express.Response) => {
 if (process.env.NODE_ENV !== 'test') {
   // Initialize database and start server
   initializeDatabase().then(() => {
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       logger.info(`
 🚀 SaaS Blueprint Generator API Server Started
 📍 Environment: ${process.env.NODE_ENV || 'development'}
@@ -213,9 +246,58 @@ if (process.env.NODE_ENV !== 'test') {
 💊 Health check: http://localhost:${PORT}/health
 🔐 Authentication: http://localhost:${PORT}/api/auth
 🗄️  Database: MongoDB connected
+📊 Job Queue: Bull with Redis
+🔄 WebSocket: Socket.IO enabled
+🤖 AI Service: OpenAI GPT-4 ready
 ⏰ Started at: ${new Date().toISOString()}
+
+📋 New Features:
+  • Background job processing
+  • Real-time progress updates
+  • Enhanced error handling
+  • Confidence scoring
+  • Result aggregation
     `);
     });
+  });
+
+  // Graceful shutdown handling
+  process.on('SIGTERM', async () => {
+    logger.info('SIGTERM received, shutting down gracefully...');
+    
+    try {
+      await Promise.all([
+        webSocketService.shutdown(),
+        jobQueueService.shutdown(),
+      ]);
+      
+      server.close(() => {
+        logger.info('Server closed successfully');
+        process.exit(0);
+      });
+    } catch (error) {
+      logger.error('Error during shutdown:', error);
+      process.exit(1);
+    }
+  });
+
+  process.on('SIGINT', async () => {
+    logger.info('SIGINT received, shutting down gracefully...');
+    
+    try {
+      await Promise.all([
+        webSocketService.shutdown(),
+        jobQueueService.shutdown(),
+      ]);
+      
+      server.close(() => {
+        logger.info('Server closed successfully');
+        process.exit(0);
+      });
+    } catch (error) {
+      logger.error('Error during shutdown:', error);
+      process.exit(1);
+    }
   });
 }
 
