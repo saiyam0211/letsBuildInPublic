@@ -1,123 +1,120 @@
-// Unit test setup for backend
+// Unit test setup for backend - Local Testing Configuration
 import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 import { logger } from '@/utils/logger';
-import { setupCIEnvironment, cleanupLockFiles } from './ci-setup';
-import path from 'path';
-import fs from 'fs';
 
 let mongoServer: MongoMemoryServer;
 
-// Mock OpenAI API for test environment
-if (process.env.NODE_ENV === 'test') {
-  // Set test environment variables
-  process.env.OPENAI_API_KEY =
-    'sk-test-mock-api-key-for-testing-12345678901234567890';
-  process.env.REDIS_URL = 'redis://localhost:6379'; // Mock Redis URL
-  process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing-only';
-  process.env.JWT_REFRESH_SECRET =
-    'test-jwt-refresh-secret-key-for-testing-only';
-}
+// Test environment setup
+const setupTestEnvironment = () => {
+  // Ensure we're in test mode
+  process.env.NODE_ENV = 'test';
 
-beforeAll(async () => {
-  // Setup CI environment if running in CI
-  setupCIEnvironment();
+  // Set mock OpenAI API key for tests
+  if (
+    !process.env.OPENAI_API_KEY ||
+    process.env.OPENAI_API_KEY.includes('your_')
+  ) {
+    process.env.OPENAI_API_KEY =
+      'sk-test-mock-api-key-for-testing-12345678901234567890';
+  }
 
-  // Setup in-memory MongoDB for unit testing
+  // Set default JWT secrets for tests if not provided
+  if (!process.env.JWT_SECRET) {
+    process.env.JWT_SECRET = 'test-jwt-secret-for-unit-tests-12345';
+  }
+  if (!process.env.JWT_REFRESH_SECRET) {
+    process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-for-unit-tests-67890';
+  }
+
+  // Mock Redis URL for tests (redis client will handle gracefully if not available)
+  if (!process.env.REDIS_URL) {
+    process.env.REDIS_URL = 'redis://localhost:6379';
+  }
+
+  // Set other test environment variables
+  process.env.EMAIL_FROM = 'test@example.com';
+  process.env.SMTP_HOST = 'localhost';
+  process.env.SMTP_PORT = '587';
+  process.env.SMTP_USER = 'test';
+  process.env.SMTP_PASS = 'test';
+  process.env.CORS_ORIGIN = 'http://localhost:3000';
+
+  logger.info('🧪 Test environment configured');
+};
+
+// Database connection setup
+const connectToDatabase = async () => {
   try {
-    // Create unique cache directory for CI environments to avoid lockfile conflicts
-    const cacheDir = process.env.CI
-      ? `/tmp/mongo-binaries-unit-${process.env.GITHUB_RUN_ID || Date.now()}`
-      : path.join(process.cwd(), '.mongodb-binaries-unit');
-
-    // Ensure cache directory exists
-    if (!fs.existsSync(cacheDir)) {
-      fs.mkdirSync(cacheDir, { recursive: true });
-    }
-
-    // Configure MongoDB Memory Server with CI-safe options
-    mongoServer = await MongoMemoryServer.create({
-      binary: {
-        version: '6.0.4', // Use a specific version to avoid download delays
-        downloadDir: cacheDir, // Use unique directory to avoid conflicts
-      },
-      instance: {
-        dbName: 'test_saas_blueprint_generator_unit',
-        port: 0, // Let MongoDB choose an available port
-        storageEngine: 'wiredTiger',
-      },
-    });
-
+    // Use MongoDB Memory Server for local testing
+    mongoServer = await MongoMemoryServer.create();
     const mongoUri = mongoServer.getUri();
 
-    // Set the test environment
-    process.env.NODE_ENV = 'test';
-    process.env.MONGODB_URI = mongoUri;
-
-    // Connect to the in-memory database with optimized settings for testing
-    await mongoose.connect(mongoUri, {
-      maxPoolSize: 3, // Smaller pool for unit tests
-      serverSelectionTimeoutMS: 15000, // Increased for CI environments
-      socketTimeoutMS: 45000,
-      bufferCommands: false,
-      connectTimeoutMS: 30000, // Increased timeout for CI
-    });
-
-    logger.info('Unit test database connected successfully');
+    await mongoose.connect(mongoUri);
+    logger.info('✅ Test database connected');
   } catch (error) {
-    logger.error('Failed to setup unit test database:', error);
+    logger.error('❌ Test database connection failed:', error);
     throw error;
   }
-}, 120000); // 120 second timeout for setup (increased for CI)
+};
 
-afterAll(async () => {
-  // Cleanup test database connection with proper error handling
-  try {
-    // Close mongoose connection first
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.connection.close();
-      logger.info('Mongoose connection closed');
-    }
+// Database cleanup
+const cleanupDatabase = async () => {
+  if (mongoose.connection.readyState === 1 && mongoose.connection.db) {
+    const collections = await mongoose.connection.db.collections();
 
-    // Stop MongoDB Memory Server with timeout
-    if (mongoServer) {
-      await Promise.race([
-        mongoServer.stop(),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('MongoDB stop timeout')), 30000)
-        ),
-      ]);
-      logger.info('MongoDB Memory Server stopped');
-    }
-
-    // Clean up lock files and cache directory in CI environment
-    if (process.env.CI) {
-      cleanupLockFiles();
-
-      const cacheDir = `/tmp/mongo-binaries-unit-${process.env.GITHUB_RUN_ID || Date.now()}`;
+    // Clear all test collections
+    for (const collection of collections) {
       try {
-        if (fs.existsSync(cacheDir)) {
-          fs.rmSync(cacheDir, { recursive: true, force: true });
-          logger.info('Cleaned up MongoDB cache directory');
-        }
-      } catch (cleanupError) {
-        logger.warn('Failed to cleanup cache directory:', cleanupError);
-        // Don't throw - this is not critical
+        await collection.deleteMany({});
+        logger.debug(`Cleared collection: ${collection.collectionName}`);
+      } catch (clearError) {
+        logger.warn(
+          `Failed to clear collection ${collection.collectionName}:`,
+          clearError
+        );
       }
     }
-
-    logger.info('Unit test database disconnected successfully');
-  } catch (error) {
-    logger.error('Error during unit test cleanup:', error);
-    // Don't throw in cleanup to avoid masking test failures
   }
-}, 60000); // 60 second timeout for cleanup
+};
 
-beforeEach(() => {
-  // Reset any global state before each test
+// Database disconnection
+const disconnectFromDatabase = async () => {
+  try {
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+      logger.debug('🔌 Test database disconnected');
+    }
+
+    if (mongoServer) {
+      await mongoServer.stop();
+      logger.debug('🛑 MongoDB Memory Server stopped');
+    }
+  } catch (error) {
+    logger.error('❌ Error disconnecting from test database:', error);
+  }
+};
+
+// Test lifecycle setup
+beforeAll(async () => {
+  logger.info('🚀 Setting up test environment...');
+  setupTestEnvironment();
+  await connectToDatabase();
+}, 30000); // 30 second timeout for setup
+
+afterAll(async () => {
+  logger.info('🧹 Cleaning up test environment...');
+  await disconnectFromDatabase();
+  logger.info('✅ Test environment cleanup completed');
+}, 10000); // 10 second timeout for cleanup
+
+beforeEach(async () => {
+  // Clean up test data before each test
+  await cleanupDatabase();
 });
 
-afterEach(() => {
-  // Clean up after each test
+afterEach(async () => {
+  // Optional: Additional cleanup after each test
+  // This ensures no test data leaks between tests
 });

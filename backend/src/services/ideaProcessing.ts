@@ -235,8 +235,12 @@ export class IdeaProcessingService {
   /**
    * Validate if a string is a valid MongoDB ObjectId
    */
-  private isValidObjectId(id: string): boolean {
-    return /^[0-9a-fA-F]{24}$/.test(id);
+  private isValidObjectId(id: string | undefined | null): boolean {
+    if (!id || typeof id !== 'string') {
+      return false;
+    }
+    // Check if it's a valid 24-character hex string
+    return /^[0-9a-fA-F]{24}$/.test(id) && id.length === 24;
   }
 
   /**
@@ -248,7 +252,7 @@ export class IdeaProcessingService {
     // Validate projectId before creating ObjectId
     if (!this.isValidObjectId(request.projectId)) {
       throw new Error(
-        'Invalid project ID format. Must be a 24-character hex string.'
+        `Invalid project ID format. Received: "${request.projectId}" (type: ${typeof request.projectId}). Must be a 24-character hex string.`
       );
     }
 
