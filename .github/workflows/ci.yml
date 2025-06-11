@@ -56,35 +56,34 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
-    - name: Clear MongoDB binaries cache
-      run: |
-        sudo rm -rf /tmp/mongo-binaries-* || true
-        sudo rm -rf /home/runner/.cache/mongodb-binaries || true
-        sudo find /tmp -name "*.lock" -path "*mongo*" -delete || true
-      
-    - name: Setup CI environment
+    - name: Setup CI environment with local test databases
       run: |
         echo "GITHUB_RUN_ID=${{ github.run_id }}" >> $GITHUB_ENV
         echo "CI=true" >> $GITHUB_ENV
         echo "NODE_ENV=test" >> $GITHUB_ENV
+        # Use local MongoDB Memory Server for tests
+        echo "REDIS_URL=redis://localhost:6379" >> $GITHUB_ENV
+        # Test JWT secrets
+        echo "JWT_SECRET=test-jwt-secret-ci-${{ github.run_id }}" >> $GITHUB_ENV
+        echo "JWT_REFRESH_SECRET=test-refresh-secret-ci-${{ github.run_id }}" >> $GITHUB_ENV
+        # Mock OpenAI for tests
+        echo "OPENAI_API_KEY=sk-test-mock-api-key-for-ci-${{ github.run_id }}" >> $GITHUB_ENV
+        # Mock email settings
+        echo "EMAIL_FROM=test@example.com" >> $GITHUB_ENV
+        echo "SMTP_HOST=localhost" >> $GITHUB_ENV
+        echo "SMTP_PORT=587" >> $GITHUB_ENV
+        echo "SMTP_USER=test" >> $GITHUB_ENV
+        echo "SMTP_PASS=test" >> $GITHUB_ENV
         
-    - name: Predownload MongoDB binaries
-      run: npm run ci:setup
-      working-directory: ./backend
-      
     - name: Run unit tests
       run: npm run test:unit
-      working-directory: ./backend
       env:
-        GITHUB_RUN_ID: ${{ github.run_id }}
         CI: true
         NODE_ENV: test
-      
+        
     - name: Run integration tests
       run: npm run test:integration
-      working-directory: ./backend
       env:
-        GITHUB_RUN_ID: ${{ github.run_id }}
         CI: true
         NODE_ENV: test
       

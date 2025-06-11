@@ -1,5 +1,8 @@
-import { AuthService } from '../../services/authService';
-import { IUser } from '../../models/User';
+import { AuthService } from '@/services/authService';
+import { IUser } from '@/models/User';
+import '../setup/emailMock'; // Import email service mock
+import { EmailService } from '@/services/emailService';
+import { vi } from 'vitest';
 
 interface TestUserResult {
   user: IUser;
@@ -21,8 +24,20 @@ export async function createTestUser(userData?: {
     name: userData?.name || 'Test User',
   };
 
+  // Mock email service in test environment to prevent actual email sending
+  const originalSendVerificationEmail = EmailService.sendVerificationEmail;
+  if (process.env.NODE_ENV === 'test') {
+    EmailService.sendVerificationEmail = vi.fn().mockResolvedValue(undefined);
+  }
+
   try {
     const result = await AuthService.register(defaultUserData);
+
+    // In test environment, automatically verify the user to skip email verification
+    if (process.env.NODE_ENV === 'test' && result.user) {
+      result.user.isEmailVerified = true;
+      await result.user.save();
+    }
 
     return {
       user: result.user,
@@ -32,7 +47,24 @@ export async function createTestUser(userData?: {
   } catch (error) {
     console.error('Error creating test user:', error);
     throw error;
+  } finally {
+    // Restore original method
+    if (process.env.NODE_ENV === 'test') {
+      EmailService.sendVerificationEmail = originalSendVerificationEmail;
+    }
   }
+}
+
+/**
+ * Login with existing test user
+ */
+export async function loginTestUser(email: string, password: string) {
+  const result = await AuthService.login({ email, password });
+  return {
+    user: result.user,
+    token: result.tokens.accessToken,
+    refreshToken: result.tokens.refreshToken,
+  };
 }
 
 /**

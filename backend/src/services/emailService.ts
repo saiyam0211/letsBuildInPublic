@@ -18,6 +18,12 @@ export class EmailService {
     name: string,
     verificationToken: string
   ): Promise<void> {
+    // Skip email sending in test environment
+    if (process.env.NODE_ENV === 'test') {
+      console.log(`📧 [TEST] Skipping email verification for: ${email}`);
+      return;
+    }
+
     const verificationUrl = `${'http://localhost:3000'}/email-verification?token=${verificationToken}`;
 
     const html = `
@@ -168,6 +174,12 @@ export class EmailService {
     name: string,
     resetToken: string
   ): Promise<void> {
+    // Skip email sending in test environment
+    if (process.env.NODE_ENV === 'test') {
+      console.log(`📧 [TEST] Skipping password reset email for: ${email}`);
+      return;
+    }
+
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
 
     const html = `
@@ -331,9 +343,15 @@ export class EmailService {
   }
 
   /**
-   * Generic email sending method
+   * Send email using configured service
    */
   static async sendEmail(options: EmailOptions): Promise<void> {
+    // Skip email sending in test environment
+    if (process.env.NODE_ENV === 'test') {
+      console.log(`📧 [TEST] Skipping email to: ${options.to}`);
+      return;
+    }
+
     try {
       // For development, just log the email
       if (process.env.NODE_ENV === 'development') {

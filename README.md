@@ -4,6 +4,12 @@
 
 An AI-powered platform that transforms SaaS ideas into comprehensive visual blueprints and implementation plans. This project follows a structured 22-week development plan across 12 phases.
 
+## 🎯 Project Status
+
+**Current Version:** 1.0.0 MVP  
+**Development Phase:** Production Ready  
+**Last Updated:** December 2024
+
 ## 📊 Current Status
 
 **✅ Phase 1.1 - Development Environment Setup (COMPLETE)**
@@ -54,43 +60,91 @@ saas-blueprint-generator-platform/
 
 ### Prerequisites
 
-- Node.js 18+
-- Docker & Docker Compose
-- Git
+- Node.js 18+ and npm
+- MongoDB Atlas account (cloud database)
+- Upstash Redis account (cloud cache)
+- OpenAI API key
 
-### 1. Clone and Setup
+### Environment Setup
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/your-username/BigProject.git
+   cd BigProject
+   ```
+
+2. **Copy environment template:**
+   ```bash
+   cp env.example .env
+   ```
+
+3. **Configure environment variables:**
+   ```bash
+   # Database (use cloud instances for production)
+   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database
+   REDIS_URL=rediss://username:password@host:port
+   
+   # Authentication
+   JWT_SECRET=your-super-secret-jwt-key
+   JWT_REFRESH_SECRET=your-super-secret-refresh-key
+   
+   # AI Services
+   OPENAI_API_KEY=sk-your-openai-api-key
+   ```
+
+4. **Install dependencies and start:**
+   ```bash
+   npm install
+   npm run dev
+   ```
+
+## 🧪 Testing & CI/CD
+
+### GitHub Actions Secrets
+
+For the CI/CD pipeline to work with cloud databases, configure these GitHub repository secrets:
 
 ```bash
-git clone https://github.com/saiyam0211/letsBuildInPublic.git
-cd letsBuildInPublic
-npm install
+# Required GitHub Secrets for CI/CD
+MONGODB_TEST_URI=mongodb+srv://username:password@cluster.mongodb.net/test_database
+REDIS_TEST_URL=rediss://username:password@upstash-host:6380
+JWT_TEST_SECRET=test-jwt-secret-for-github-actions
+JWT_REFRESH_TEST_SECRET=test-refresh-secret-for-github-actions
 ```
 
-### 2. Environment Configuration
+### Setting GitHub Secrets
+
+1. Go to your GitHub repository
+2. Navigate to **Settings** → **Secrets and variables** → **Actions**
+3. Click **New repository secret** and add each secret:
+
+   - **Name:** `MONGODB_TEST_URI`  
+     **Value:** Your MongoDB Atlas test database connection string
+   
+   - **Name:** `REDIS_TEST_URL`  
+     **Value:** Your Upstash Redis connection string (use `rediss://` for TLS)
+   
+   - **Name:** `JWT_TEST_SECRET`  
+     **Value:** A secure random string for test JWT signing
+   
+   - **Name:** `JWT_REFRESH_TEST_SECRET`  
+     **Value:** A secure random string for test JWT refresh tokens
+
+### Local Testing
 
 ```bash
-# Copy environment template and configure
-cp env.example .env
-# Edit .env with your configuration (especially OPENAI_API_KEY)
+# Run unit tests
+npm run test:unit
+
+# Run integration tests  
+npm run test:integration
+
+# Run with coverage
+npm run test:coverage
+
+# Lint code
+npm run lint
 ```
-
-### 3. Start Development Environment
-
-```bash
-# Start all services with Docker
-npm run docker:up
-
-# Or run individually
-npm run dev:backend    # Backend on :5000
-npm run dev:frontend   # Frontend on :3000
-```
-
-### 4. Access Services
-
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:5000/api
-- **Health Check**: http://localhost:5000/health
-- **MongoDB Admin**: http://localhost:8081 (admin/admin123)
 
 ## 🛠️ Tech Stack
 

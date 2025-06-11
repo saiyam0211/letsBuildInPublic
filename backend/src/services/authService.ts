@@ -96,15 +96,27 @@ export class AuthService {
   }
 
   /**
-   * Verify refresh token
+   * Validate if a string is a properly formatted JWT token
    */
-  static verifyRefreshToken(token: string): TokenPayload {
+  private static isValidJWT(token: string): boolean {
+    if (!token || typeof token !== 'string') {
+      return false;
+    }
+    const parts = token.split('.');
+    return parts.length === 3; // JWT consists of three parts separated by dots
+  }
+
+  /**
+   * Verify refresh token and return payload
+   */
+  static verifyRefreshToken(refreshToken: string): TokenPayload {
     try {
-      if (!token || typeof token !== 'string') {
-        throw new Error('Refresh token is required and must be a string');
+      // Validate JWT format before attempting to verify
+      if (!this.isValidJWT(refreshToken)) {
+        throw new Error('Malformed refresh token');
       }
 
-      return jwt.verify(token, authConfig.jwt.refreshSecret, {
+      return jwt.verify(refreshToken, authConfig.jwt.refreshSecret, {
         issuer: 'saas-blueprint-generator',
         audience: 'saas-blueprint-users',
       }) as TokenPayload;
