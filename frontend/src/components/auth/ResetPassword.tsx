@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -46,7 +46,7 @@ const resetPasswordSchema = z
 
 type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 
-export const ResetPassword = () => {
+export const ResetPassword: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -55,7 +55,6 @@ export const ResetPassword = () => {
   const dispatch = useAppDispatch();
   const { isLoading, error } = useAppSelector(state => state.auth);
   const { success, error: showError, loading, removeToast } = useToastContext();
-
   const token = searchParams.get('token');
 
   const {
@@ -129,52 +128,6 @@ export const ResetPassword = () => {
           },
         },
       });
-    }
-  };
-
-  const getPasswordStrength = (password: string) => {
-    let strength = 0;
-    if (password.length >= 8) strength++;
-    if (/[a-z]/.test(password)) strength++;
-    if (/[A-Z]/.test(password)) strength++;
-    if (/\d/.test(password)) strength++;
-    if (/[@$!%*?&]/.test(password)) strength++;
-    return strength;
-  };
-
-  const getStrengthLabel = (strength: number) => {
-    switch (strength) {
-      case 0:
-      case 1:
-        return 'Very Weak';
-      case 2:
-        return 'Weak';
-      case 3:
-        return 'Fair';
-      case 4:
-        return 'Good';
-      case 5:
-        return 'Strong';
-      default:
-        return 'Very Weak';
-    }
-  };
-
-  const getStrengthColor = (strength: number) => {
-    switch (strength) {
-      case 0:
-      case 1:
-        return 'bg-red-500';
-      case 2:
-        return 'bg-orange-500';
-      case 3:
-        return 'bg-yellow-500';
-      case 4:
-        return 'bg-blue-500';
-      case 5:
-        return 'bg-green-500';
-      default:
-        return 'bg-gray-500';
     }
   };
 

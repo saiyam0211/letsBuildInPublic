@@ -1,9 +1,9 @@
+import mongoose from 'mongoose';
 import { openAIService, OpenAIResponse } from './openai.js';
 import { SaasIdea, ISaasIdea } from '../models/SaasIdea.js';
-import { IdeaValidation, IIdeaValidation } from '../models/IdeaValidation.js';
+import { IdeaValidation } from '../models/IdeaValidation.js';
 import { Feature } from '../models/Feature.js';
 import { TechStackRecommendation } from '../models/TechStackRecommendation.js';
-import mongoose from 'mongoose';
 
 export interface IdeaProcessingRequest {
   projectId: string;
@@ -25,7 +25,12 @@ export interface ProcessedIdeaResult {
 
 export interface BusinessAnalysisResult {
   businessModelType: 'B2B' | 'B2C' | 'B2B2C' | 'Marketplace' | 'Platform';
-  revenueModel: 'Subscription' | 'Freemium' | 'Usage-Based' | 'One-Time' | 'Hybrid';
+  revenueModel:
+    | 'Subscription'
+    | 'Freemium'
+    | 'Usage-Based'
+    | 'One-Time'
+    | 'Hybrid';
   viabilityScore: number; // 0-100
   scalabilityScore: number; // 0-100
   competitiveLandscape: {
@@ -112,13 +117,17 @@ export class IdeaProcessingService {
   /**
    * Main entry point for processing a SaaS idea
    */
-  async processIdea(request: IdeaProcessingRequest): Promise<ProcessedIdeaResult> {
+  async processIdea(
+    request: IdeaProcessingRequest
+  ): Promise<ProcessedIdeaResult> {
     const startTime = Date.now();
     const stepsCompleted: string[] = [];
     let totalCost = 0;
     let totalTokens = 0;
 
-    console.log(`🚀 Starting idea processing for project: ${request.projectId}`);
+    console.log(
+      `🚀 Starting idea processing for project: ${request.projectId}`
+    );
 
     try {
       // Step 1: Save the raw idea to database
@@ -131,34 +140,57 @@ export class IdeaProcessingService {
       totalCost += businessAnalysis.cost;
       totalTokens += businessAnalysis.tokensUsed;
       stepsCompleted.push('business_analysis');
-      console.log(`✅ Step 2: Business analysis complete (${businessAnalysis.processingTime}ms)`);
+      console.log(
+        `✅ Step 2: Business analysis complete (${businessAnalysis.processingTime}ms)`
+      );
 
       // Step 3: Market validation
-      const marketValidation = await this.validateMarket(request, businessAnalysis.content);
+      const marketValidation = await this.validateMarket(
+        request,
+        businessAnalysis.content
+      );
       totalCost += marketValidation.cost;
       totalTokens += marketValidation.tokensUsed;
       stepsCompleted.push('market_validation');
-      console.log(`✅ Step 3: Market validation complete (${marketValidation.processingTime}ms)`);
+      console.log(
+        `✅ Step 3: Market validation complete (${marketValidation.processingTime}ms)`
+      );
 
       // Step 4: Feature generation
-      const featureGeneration = await this.generateFeatures(request, businessAnalysis.content);
+      const featureGeneration = await this.generateFeatures(
+        request,
+        businessAnalysis.content
+      );
       totalCost += featureGeneration.cost;
       totalTokens += featureGeneration.tokensUsed;
       stepsCompleted.push('feature_generation');
-      console.log(`✅ Step 4: Feature generation complete (${featureGeneration.processingTime}ms)`);
+      console.log(
+        `✅ Step 4: Feature generation complete (${featureGeneration.processingTime}ms)`
+      );
 
       // Step 5: Tech stack recommendation
-      const techStackRecommendation = await this.recommendTechStack(request, featureGeneration.content);
+      const techStackRecommendation = await this.recommendTechStack(
+        request,
+        featureGeneration.content
+      );
       totalCost += techStackRecommendation.cost;
       totalTokens += techStackRecommendation.tokensUsed;
       stepsCompleted.push('tech_stack_recommendation');
-      console.log(`✅ Step 5: Tech stack recommendation complete (${techStackRecommendation.processingTime}ms)`);
+      console.log(
+        `✅ Step 5: Tech stack recommendation complete (${techStackRecommendation.processingTime}ms)`
+      );
 
       // Step 6: Parse and structure results
-      const businessResult = this.parseBusinessAnalysis(businessAnalysis.content);
+      const businessResult = this.parseBusinessAnalysis(
+        businessAnalysis.content
+      );
       const marketResult = this.parseMarketValidation(marketValidation.content);
-      const featuresResult = this.parseFeatureGeneration(featureGeneration.content);
-      const techStackResult = this.parseTechStackRecommendation(techStackRecommendation.content);
+      const featuresResult = this.parseFeatureGeneration(
+        featureGeneration.content
+      );
+      const techStackResult = this.parseTechStackRecommendation(
+        techStackRecommendation.content
+      );
       stepsCompleted.push('results_parsed');
 
       // Step 7: Save structured results to database
@@ -166,12 +198,14 @@ export class IdeaProcessingService {
         businessResult,
         marketResult,
         featuresResult,
-        techStackResult
+        techStackResult,
       });
       stepsCompleted.push('results_saved');
 
       const totalProcessingTime = Date.now() - startTime;
-      console.log(`🎉 Idea processing complete! Total time: ${totalProcessingTime}ms, Cost: $${totalCost.toFixed(4)}`);
+      console.log(
+        `🎉 Idea processing complete! Total time: ${totalProcessingTime}ms, Cost: $${totalCost.toFixed(4)}`
+      );
 
       return {
         ideaId: savedIdea._id.toString(),
@@ -184,31 +218,39 @@ export class IdeaProcessingService {
           aiCost: totalCost,
           tokensUsed: totalTokens,
           stepsCompleted,
-          confidenceScore: this.calculateOverallConfidence(businessResult, marketResult)
-        }
+          confidenceScore: this.calculateOverallConfidence(
+            businessResult,
+            marketResult
+          ),
+        },
       };
-
     } catch (error) {
       console.error(`❌ Idea processing failed:`, error);
-      throw new Error(`Idea processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Idea processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
   /**
    * Save the raw idea to the database
    */
-  private async saveIdeaToDatabase(request: IdeaProcessingRequest): Promise<ISaasIdea> {
+  private async saveIdeaToDatabase(
+    request: IdeaProcessingRequest
+  ): Promise<ISaasIdea> {
     const ideaData = {
       projectId: new mongoose.Types.ObjectId(request.projectId),
       description: request.description,
       targetAudience: request.targetAudience,
       problemStatement: request.problemStatement,
       desiredFeatures: request.desiredFeatures || [],
-      technicalPreferences: request.technicalPreferences || []
+      technicalPreferences: request.technicalPreferences || [],
     };
 
     // Check if idea already exists for this project
-    const existingIdea = await SaasIdea.findOne({ projectId: ideaData.projectId });
+    const existingIdea = await SaasIdea.findOne({
+      projectId: ideaData.projectId,
+    });
     if (existingIdea) {
       // Update existing idea
       Object.assign(existingIdea, ideaData);
@@ -223,7 +265,9 @@ export class IdeaProcessingService {
   /**
    * Analyze business model with advanced prompting
    */
-  private async analyzeBusinessModel(request: IdeaProcessingRequest): Promise<OpenAIResponse> {
+  private async analyzeBusinessModel(
+    request: IdeaProcessingRequest
+  ): Promise<OpenAIResponse> {
     const systemMessage = `You are an expert business strategist and SaaS consultant with 15+ years of experience analyzing technology startups. Your task is to perform a comprehensive business model analysis.
 
 Analyze the business model considering:
@@ -272,14 +316,17 @@ Provide a comprehensive business model analysis with confidence scores and detai
     return await openAIService.completion(prompt, {
       systemMessage,
       maxTokens: 1500,
-      temperature: 0.3 // Lower temperature for more analytical response
+      temperature: 0.3, // Lower temperature for more analytical response
     });
   }
 
   /**
    * Validate market opportunity with comprehensive analysis
    */
-  private async validateMarket(request: IdeaProcessingRequest, businessAnalysis: string): Promise<OpenAIResponse> {
+  private async validateMarket(
+    request: IdeaProcessingRequest,
+    businessAnalysis: string
+  ): Promise<OpenAIResponse> {
     const systemMessage = `You are a senior market research analyst and venture capital partner specializing in SaaS market validation. Your expertise includes market sizing, competitive analysis, and customer segmentation.
 
 Perform comprehensive market validation including:
@@ -330,14 +377,17 @@ Provide comprehensive market validation with specific data points and actionable
     return await openAIService.completion(prompt, {
       systemMessage,
       maxTokens: 1800,
-      temperature: 0.4
+      temperature: 0.4,
     });
   }
 
   /**
    * Generate comprehensive feature roadmap
    */
-  private async generateFeatures(request: IdeaProcessingRequest, businessContext: string): Promise<OpenAIResponse> {
+  private async generateFeatures(
+    request: IdeaProcessingRequest,
+    businessContext: string
+  ): Promise<OpenAIResponse> {
     const systemMessage = `You are a senior product manager with extensive experience in SaaS product development and feature prioritization. You excel at breaking down complex ideas into actionable feature sets.
 
 Generate a comprehensive feature roadmap with:
@@ -395,14 +445,17 @@ Create a comprehensive feature roadmap with clear priorities and implementation 
     return await openAIService.completion(prompt, {
       systemMessage,
       maxTokens: 2000,
-      temperature: 0.5
+      temperature: 0.5,
     });
   }
 
   /**
    * Recommend comprehensive tech stack
    */
-  private async recommendTechStack(request: IdeaProcessingRequest, featuresContext: string): Promise<OpenAIResponse> {
+  private async recommendTechStack(
+    request: IdeaProcessingRequest,
+    featuresContext: string
+  ): Promise<OpenAIResponse> {
     const systemMessage = `You are a senior technical architect and CTO with 15+ years of experience building scalable SaaS platforms. You specialize in technology selection, architecture design, and cost optimization.
 
 Recommend a comprehensive tech stack considering:
@@ -440,7 +493,7 @@ Provide response in this exact JSON format:
   }
 }`;
 
-    const techPreferences = request.technicalPreferences?.length 
+    const techPreferences = request.technicalPreferences?.length
       ? `Technical Preferences: ${request.technicalPreferences.join(', ')}`
       : '';
 
@@ -459,7 +512,7 @@ Provide detailed technology recommendations with cost analysis and architecture 
     return await openAIService.completion(prompt, {
       systemMessage,
       maxTokens: 1800,
-      temperature: 0.3
+      temperature: 0.3,
     });
   }
 
@@ -475,11 +528,12 @@ Provide detailed technology recommendations with cost analysis and architecture 
         viabilityScore: parsed.viabilityScore || 0,
         scalabilityScore: parsed.scalabilityScore || 0,
         competitiveLandscape: {
-          competitionLevel: parsed.competitiveLandscape?.competitionLevel || 'Medium',
+          competitionLevel:
+            parsed.competitiveLandscape?.competitionLevel || 'Medium',
           marketSaturation: parsed.competitiveLandscape?.marketSaturation || 50,
-          differentiation: parsed.competitiveLandscape?.differentiation || []
+          differentiation: parsed.competitiveLandscape?.differentiation || [],
         },
-        confidenceScore: parsed.confidenceScore || 0
+        confidenceScore: parsed.confidenceScore || 0,
       };
     } catch (error) {
       console.warn('Failed to parse business analysis JSON, using fallback');
@@ -496,23 +550,27 @@ Provide detailed technology recommendations with cost analysis and architecture 
       return {
         marketSize: {
           tam: parsed.marketSize?.tam || 'Not determined',
-          sam: parsed.marketSize?.sam || 'Not determined', 
-          som: parsed.marketSize?.som || 'Not determined'
+          sam: parsed.marketSize?.sam || 'Not determined',
+          som: parsed.marketSize?.som || 'Not determined',
         },
         targetAudienceAnalysis: {
-          primarySegment: parsed.targetAudienceAnalysis?.primarySegment || 'Not specified',
-          secondarySegments: parsed.targetAudienceAnalysis?.secondarySegments || [],
+          primarySegment:
+            parsed.targetAudienceAnalysis?.primarySegment || 'Not specified',
+          secondarySegments:
+            parsed.targetAudienceAnalysis?.secondarySegments || [],
           painPoints: parsed.targetAudienceAnalysis?.painPoints || [],
-          willingnessToPay: parsed.targetAudienceAnalysis?.willingnessToPay || 'Not determined',
-          acquisitionChannels: parsed.targetAudienceAnalysis?.acquisitionChannels || []
+          willingnessToPay:
+            parsed.targetAudienceAnalysis?.willingnessToPay || 'Not determined',
+          acquisitionChannels:
+            parsed.targetAudienceAnalysis?.acquisitionChannels || [],
         },
         riskAssessment: {
           marketRisks: parsed.riskAssessment?.marketRisks || [],
           technicalRisks: parsed.riskAssessment?.technicalRisks || [],
           financialRisks: parsed.riskAssessment?.financialRisks || [],
-          competitiveRisks: parsed.riskAssessment?.competitiveRisks || []
+          competitiveRisks: parsed.riskAssessment?.competitiveRisks || [],
         },
-        validationScore: parsed.validationScore || 0
+        validationScore: parsed.validationScore || 0,
       };
     } catch (error) {
       console.warn('Failed to parse market validation JSON, using fallback');
@@ -533,8 +591,8 @@ Provide detailed technology recommendations with cost analysis and architecture 
         featureRoadmap: {
           phase1: parsed.featureRoadmap?.phase1 || [],
           phase2: parsed.featureRoadmap?.phase2 || [],
-          phase3: parsed.featureRoadmap?.phase3 || []
-        }
+          phase3: parsed.featureRoadmap?.phase3 || [],
+        },
       };
     } catch (error) {
       console.warn('Failed to parse feature generation JSON, using fallback');
@@ -557,8 +615,8 @@ Provide detailed technology recommendations with cost analysis and architecture 
         estimatedCosts: {
           development: parsed.estimatedCosts?.development || 'Not estimated',
           monthly: parsed.estimatedCosts?.monthly || 'Not estimated',
-          scaling: parsed.estimatedCosts?.scaling || 'Not estimated'
-        }
+          scaling: parsed.estimatedCosts?.scaling || 'Not estimated',
+        },
       };
     } catch (error) {
       console.warn('Failed to parse tech stack JSON, using fallback');
@@ -569,29 +627,50 @@ Provide detailed technology recommendations with cost analysis and architecture 
   /**
    * Helper to parse tech stack component
    */
-  private parseTechComponent(component: any): TechStackComponent {
+  private parseTechComponent(component: unknown): TechStackComponent {
+    if (typeof component === 'object' && component !== null) {
+      const comp = component as Record<string, unknown>;
+      return {
+        primary: String(comp.primary || ''),
+        alternatives: Array.isArray(comp.alternatives)
+          ? comp.alternatives.map(String)
+          : [],
+        reasoning: String(comp.reasoning || ''),
+        pros: Array.isArray(comp.pros) ? comp.pros.map(String) : [],
+        cons: Array.isArray(comp.cons) ? comp.cons.map(String) : [],
+      };
+    }
     return {
-      primary: component?.primary || 'Not specified',
-      alternatives: component?.alternatives || [],
-      reasoning: component?.reasoning || 'No reasoning provided',
-      pros: component?.pros || [],
-      cons: component?.cons || []
+      primary: '',
+      alternatives: [],
+      reasoning: '',
+      pros: [],
+      cons: [],
     };
   }
 
   /**
    * Save structured processing results to database
    */
-  private async saveProcessingResults(ideaId: string, results: any): Promise<void> {
+  private async saveProcessingResults(
+    ideaId: string,
+    results: {
+      businessResult: BusinessAnalysisResult;
+      marketResult: MarketValidationResult;
+      featuresResult: FeatureGenerationResult;
+      techStackResult: TechStackResult;
+    }
+  ): Promise<void> {
     // Save to IdeaValidation collection
     const validationData = {
       ideaId: new mongoose.Types.ObjectId(ideaId),
       marketPotential: results.marketResult.validationScore,
       similarProducts: [], // Could be extracted from market analysis
-      differentiationOpportunities: results.businessResult.competitiveLandscape.differentiation,
+      differentiationOpportunities:
+        results.businessResult.competitiveLandscape.differentiation,
       risks: this.formatRisksForDatabase(results.marketResult.riskAssessment),
       confidenceScore: results.businessResult.confidenceScore,
-      improvementSuggestions: [] // Could be extracted from recommendations
+      improvementSuggestions: [], // Could be extracted from recommendations
     };
 
     await IdeaValidation.findOneAndUpdate(
@@ -610,15 +689,30 @@ Provide detailed technology recommendations with cost analysis and architecture 
   /**
    * Save features to database
    */
-  private async saveFeaturesToDatabase(ideaId: string, features: FeatureGenerationResult): Promise<void> {
+  private async saveFeaturesToDatabase(
+    ideaId: string,
+    features: FeatureGenerationResult
+  ): Promise<void> {
     const allFeatures = [
       ...features.mvpFeatures.map(f => ({ ...f, category: 'mvp' as const })),
-      ...features.growthFeatures.map(f => ({ ...f, category: 'growth' as const })),
-      ...features.advancedFeatures.map(f => ({ ...f, category: 'future' as const }))
+      ...features.growthFeatures.map(f => ({
+        ...f,
+        category: 'growth' as const,
+      })),
+      ...features.advancedFeatures.map(f => ({
+        ...f,
+        category: 'future' as const,
+      })),
     ];
 
-    // Delete existing features for this idea - using projectId since Feature model doesn't have ideaId
-    const projectId = new mongoose.Types.ObjectId(ideaId); // Assuming ideaId is projectId for now
+    // Get projectId from the saved idea
+    const savedIdea = await SaasIdea.findById(ideaId);
+    if (!savedIdea) {
+      throw new Error('Saved idea not found');
+    }
+    const projectId = savedIdea.projectId;
+
+    // Delete existing features for this project
     await Feature.deleteMany({ projectId: projectId });
 
     // Insert new features
@@ -629,7 +723,7 @@ Provide detailed technology recommendations with cost analysis and architecture 
       category: feature.category,
       priority: this.mapPriorityToEnum(feature.priority),
       complexity: Math.min(Math.max(feature.priority, 1), 10), // Map priority 1-10 to complexity 1-10
-      userPersona: 'Primary User' // Default user persona
+      userPersona: 'Primary User', // Default user persona
     }));
 
     if (featureDocuments.length > 0) {
@@ -640,7 +734,9 @@ Provide detailed technology recommendations with cost analysis and architecture 
   /**
    * Map priority number to priority enum
    */
-  private mapPriorityToEnum(priority: number): 'low' | 'medium' | 'high' | 'critical' {
+  private mapPriorityToEnum(
+    priority: number
+  ): 'low' | 'medium' | 'high' | 'critical' {
     if (priority >= 9) return 'critical';
     if (priority >= 7) return 'high';
     if (priority >= 5) return 'medium';
@@ -650,66 +746,89 @@ Provide detailed technology recommendations with cost analysis and architecture 
   /**
    * Save tech stack to database
    */
-  private async saveTechStackToDatabase(ideaId: string, techStack: TechStackResult): Promise<void> {
-    const projectId = new mongoose.Types.ObjectId(ideaId); // Assuming ideaId is projectId for now
-    
+  private async saveTechStackToDatabase(
+    ideaId: string,
+    techStack: TechStackResult
+  ): Promise<void> {
+    // Get projectId from the saved idea
+    const savedIdea = await SaasIdea.findById(ideaId);
+    if (!savedIdea) {
+      throw new Error('Saved idea not found');
+    }
+    const projectId = savedIdea.projectId;
+
     const techStackData = {
       projectId: projectId,
-      frontend: [{
-        name: techStack.frontend.primary,
-        description: techStack.frontend.reasoning,
-        pros: techStack.frontend.pros,
-        cons: techStack.frontend.cons,
-        difficulty: 'intermediate' as const,
-        cost: 'free' as const,
-        popularity: 85
-      }],
-      backend: [{
-        name: techStack.backend.primary,
-        description: techStack.backend.reasoning,
-        pros: techStack.backend.pros,
-        cons: techStack.backend.cons,
-        difficulty: 'intermediate' as const,
-        cost: 'free' as const,
-        popularity: 80
-      }],
-      database: [{
-        name: techStack.database.primary,
-        description: techStack.database.reasoning,
-        pros: techStack.database.pros,
-        cons: techStack.database.cons,
-        difficulty: 'intermediate' as const,
-        cost: 'free' as const,
-        popularity: 75
-      }],
-      infrastructure: [{
-        name: techStack.infrastructure.primary,
-        description: techStack.infrastructure.reasoning,
-        pros: techStack.infrastructure.pros,
-        cons: techStack.infrastructure.cons,
-        difficulty: 'advanced' as const,
-        cost: 'medium' as const,
-        popularity: 90
-      }],
-      thirdPartyServices: [{
-        name: techStack.thirdPartyServices.primary,
-        description: techStack.thirdPartyServices.reasoning,
-        pros: techStack.thirdPartyServices.pros,
-        cons: techStack.thirdPartyServices.cons,
-        difficulty: 'beginner' as const,
-        cost: 'medium' as const,
-        popularity: 70
-      }],
+      frontend: [
+        {
+          name: techStack.frontend.primary,
+          description: techStack.frontend.reasoning,
+          pros: techStack.frontend.pros,
+          cons: techStack.frontend.cons,
+          difficulty: 'intermediate' as const,
+          cost: 'free' as const,
+          popularity: 85,
+        },
+      ],
+      backend: [
+        {
+          name: techStack.backend.primary,
+          description: techStack.backend.reasoning,
+          pros: techStack.backend.pros,
+          cons: techStack.backend.cons,
+          difficulty: 'intermediate' as const,
+          cost: 'free' as const,
+          popularity: 80,
+        },
+      ],
+      database: [
+        {
+          name: techStack.database.primary,
+          description: techStack.database.reasoning,
+          pros: techStack.database.pros,
+          cons: techStack.database.cons,
+          difficulty: 'intermediate' as const,
+          cost: 'free' as const,
+          popularity: 75,
+        },
+      ],
+      infrastructure: [
+        {
+          name: techStack.infrastructure.primary,
+          description: techStack.infrastructure.reasoning,
+          pros: techStack.infrastructure.pros,
+          cons: techStack.infrastructure.cons,
+          difficulty: 'advanced' as const,
+          cost: 'medium' as const,
+          popularity: 90,
+        },
+      ],
+      thirdPartyServices: [
+        {
+          name: techStack.thirdPartyServices.primary,
+          description: techStack.thirdPartyServices.reasoning,
+          pros: techStack.thirdPartyServices.pros,
+          cons: techStack.thirdPartyServices.cons,
+          difficulty: 'beginner' as const,
+          cost: 'medium' as const,
+          popularity: 70,
+        },
+      ],
       rationale: {
         reasoning: `Development: ${techStack.estimatedCosts.development}, Monthly: ${techStack.estimatedCosts.monthly}`,
-        factors: ['Cost effectiveness', 'Development speed', 'Scalability', 'Team expertise'],
+        factors: [
+          'Cost effectiveness',
+          'Development speed',
+          'Scalability',
+          'Team expertise',
+        ],
         alternatives: [
           ...techStack.frontend.alternatives,
           ...techStack.backend.alternatives,
-          ...techStack.database.alternatives
-        ].slice(0, 5) // Limit to 5 alternatives
+          ...techStack.database.alternatives,
+        ].slice(0, 5), // Limit to 5 alternatives
       },
-      alternativeOptions: []
+      alternativeOptions: [],
     };
 
     await TechStackRecommendation.findOneAndUpdate(
@@ -722,39 +841,57 @@ Provide detailed technology recommendations with cost analysis and architecture 
   /**
    * Format risks for database storage
    */
-  private formatRisksForDatabase(riskAssessment: any): any[] {
-    const risks = [];
-    
+  private formatRisksForDatabase(
+    riskAssessment: MarketValidationResult['riskAssessment']
+  ): Array<{
+    type: string;
+    description: string;
+    severity: string;
+  }> {
+    const risks: Array<{
+      type: string;
+      description: string;
+      severity: string;
+    }> = [];
+
     if (riskAssessment.marketRisks) {
-      risks.push(...riskAssessment.marketRisks.map((risk: string) => ({
-        type: 'market',
-        description: risk,
-        severity: 'medium'
-      })));
+      risks.push(
+        ...riskAssessment.marketRisks.map((risk: string) => ({
+          type: 'market',
+          description: risk,
+          severity: 'medium',
+        }))
+      );
     }
 
     if (riskAssessment.technicalRisks) {
-      risks.push(...riskAssessment.technicalRisks.map((risk: string) => ({
-        type: 'technical',
-        description: risk,
-        severity: 'medium'
-      })));
+      risks.push(
+        ...riskAssessment.technicalRisks.map((risk: string) => ({
+          type: 'technical',
+          description: risk,
+          severity: 'medium',
+        }))
+      );
     }
 
     if (riskAssessment.financialRisks) {
-      risks.push(...riskAssessment.financialRisks.map((risk: string) => ({
-        type: 'financial',
-        description: risk,
-        severity: 'medium'
-      })));
+      risks.push(
+        ...riskAssessment.financialRisks.map((risk: string) => ({
+          type: 'financial',
+          description: risk,
+          severity: 'medium',
+        }))
+      );
     }
 
     if (riskAssessment.competitiveRisks) {
-      risks.push(...riskAssessment.competitiveRisks.map((risk: string) => ({
-        type: 'competitive',
-        description: risk,
-        severity: 'medium'
-      })));
+      risks.push(
+        ...riskAssessment.competitiveRisks.map((risk: string) => ({
+          type: 'competitive',
+          description: risk,
+          severity: 'medium',
+        }))
+      );
     }
 
     return risks;
@@ -763,7 +900,10 @@ Provide detailed technology recommendations with cost analysis and architecture 
   /**
    * Calculate overall confidence score
    */
-  private calculateOverallConfidence(business: BusinessAnalysisResult, market: MarketValidationResult): number {
+  private calculateOverallConfidence(
+    business: BusinessAnalysisResult,
+    market: MarketValidationResult
+  ): number {
     return Math.round((business.confidenceScore + market.validationScore) / 2);
   }
 
@@ -779,9 +919,9 @@ Provide detailed technology recommendations with cost analysis and architecture 
       competitiveLandscape: {
         competitionLevel: 'Medium',
         marketSaturation: 50,
-        differentiation: ['AI-powered features', 'User-friendly interface']
+        differentiation: ['AI-powered features', 'User-friendly interface'],
       },
-      confidenceScore: 50
+      confidenceScore: 50,
     };
   }
 
@@ -793,22 +933,22 @@ Provide detailed technology recommendations with cost analysis and architecture 
       marketSize: {
         tam: 'Market size analysis unavailable',
         sam: 'Market size analysis unavailable',
-        som: 'Market size analysis unavailable'
+        som: 'Market size analysis unavailable',
       },
       targetAudienceAnalysis: {
         primarySegment: 'Business professionals',
         secondarySegments: [],
         painPoints: ['Inefficient processes', 'Manual work'],
         willingnessToPay: 'Price sensitivity analysis needed',
-        acquisitionChannels: ['Digital marketing', 'Referrals']
+        acquisitionChannels: ['Digital marketing', 'Referrals'],
       },
       riskAssessment: {
         marketRisks: ['Market competition'],
         technicalRisks: ['Technical complexity'],
         financialRisks: ['Funding requirements'],
-        competitiveRisks: ['Established competitors']
+        competitiveRisks: ['Established competitors'],
       },
-      validationScore: 50
+      validationScore: 50,
     };
   }
 
@@ -817,22 +957,25 @@ Provide detailed technology recommendations with cost analysis and architecture 
    */
   private createFallbackFeatureGeneration(): FeatureGenerationResult {
     return {
-      mvpFeatures: [{
-        name: 'Core Functionality',
-        description: 'Basic platform features',
-        userStory: 'As a user, I want core functionality so that I can solve my problem',
-        priority: 10,
-        effort: 'L',
-        dependencies: [],
-        successMetrics: ['User adoption', 'Feature usage']
-      }],
+      mvpFeatures: [
+        {
+          name: 'Core Functionality',
+          description: 'Basic platform features',
+          userStory:
+            'As a user, I want core functionality so that I can solve my problem',
+          priority: 10,
+          effort: 'L',
+          dependencies: [],
+          successMetrics: ['User adoption', 'Feature usage'],
+        },
+      ],
       growthFeatures: [],
       advancedFeatures: [],
       featureRoadmap: {
         phase1: ['Core Functionality'],
         phase2: [],
-        phase3: []
-      }
+        phase3: [],
+      },
     };
   }
 
@@ -846,43 +989,43 @@ Provide detailed technology recommendations with cost analysis and architecture 
         alternatives: ['Vue.js', 'Angular'],
         reasoning: 'Popular and well-supported framework',
         pros: ['Large community', 'Extensive ecosystem'],
-        cons: ['Learning curve', 'Complexity']
+        cons: ['Learning curve', 'Complexity'],
       },
       backend: {
         primary: 'Node.js',
         alternatives: ['Python', 'Java'],
         reasoning: 'JavaScript consistency',
         pros: ['Fast development', 'Large ecosystem'],
-        cons: ['Single-threaded limitations']
+        cons: ['Single-threaded limitations'],
       },
       database: {
         primary: 'PostgreSQL',
         alternatives: ['MongoDB', 'MySQL'],
         reasoning: 'Reliable and feature-rich',
         pros: ['ACID compliance', 'Advanced features'],
-        cons: ['Complexity', 'Resource usage']
+        cons: ['Complexity', 'Resource usage'],
       },
       infrastructure: {
         primary: 'AWS',
         alternatives: ['Google Cloud', 'Azure'],
         reasoning: 'Comprehensive service offering',
         pros: ['Scalability', 'Reliability'],
-        cons: ['Cost complexity', 'Learning curve']
+        cons: ['Cost complexity', 'Learning curve'],
       },
       thirdPartyServices: {
         primary: 'Auth0',
         alternatives: ['Firebase Auth', 'AWS Cognito'],
         reasoning: 'Easy to implement and secure',
         pros: ['Security', 'Easy integration'],
-        cons: ['Cost at scale', 'Vendor lock-in']
+        cons: ['Cost at scale', 'Vendor lock-in'],
       },
       estimatedCosts: {
         development: '$50,000 - $150,000 for MVP',
         monthly: '$500 - $2,000 monthly operations',
-        scaling: '$5,000 - $20,000 at scale'
-      }
+        scaling: '$5,000 - $20,000 at scale',
+      },
     };
   }
 }
 
-export const ideaProcessingService = new IdeaProcessingService(); 
+export const ideaProcessingService = new IdeaProcessingService();

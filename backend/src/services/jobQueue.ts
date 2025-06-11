@@ -1,19 +1,28 @@
 import Bull from 'bull';
-import Redis from 'ioredis';
 import { logger } from '../utils/logger.js';
-import { ideaProcessingService, IdeaProcessingRequest } from './ideaProcessing.js';
+import {
+  ideaProcessingService,
+  IdeaProcessingRequest,
+} from './ideaProcessing.js';
 import { createRedisClient } from '../config/redis.js';
 
 // Create Redis connection using the centralized configuration
 export const redis = createRedisClient();
 
 // Job queue for idea processing with explicit Redis config
-const redisConfig = process.env.REDIS_HOST && process.env.REDIS_PORT ? {
-  port: parseInt(process.env.REDIS_PORT),
-  host: process.env.REDIS_HOST,
-  ...(process.env.REDIS_USERNAME && { username: process.env.REDIS_USERNAME }),
-  ...(process.env.REDIS_PASSWORD && { password: process.env.REDIS_PASSWORD }),
-} : undefined;
+const redisConfig =
+  process.env.REDIS_HOST && process.env.REDIS_PORT
+    ? {
+        port: parseInt(process.env.REDIS_PORT),
+        host: process.env.REDIS_HOST,
+        ...(process.env.REDIS_USERNAME && {
+          username: process.env.REDIS_USERNAME,
+        }),
+        ...(process.env.REDIS_PASSWORD && {
+          password: process.env.REDIS_PASSWORD,
+        }),
+      }
+    : undefined;
 
 export const ideaProcessingQueue = new Bull('idea-processing', {
   redis: redisConfig,
@@ -24,7 +33,7 @@ export const ideaProcessingQueue = new Bull('idea-processing', {
       delay: 5000,
     },
     removeOnComplete: 50, // Keep last 50 completed jobs
-    removeOnFail: 100,    // Keep last 100 failed jobs
+    removeOnFail: 100, // Keep last 100 failed jobs
   },
   settings: {
     stalledInterval: 30 * 1000, // How often check for stalled jobs (30 seconds)
@@ -49,7 +58,7 @@ export interface JobProgress {
   startTime?: Date;
   endTime?: Date;
   error?: string;
-  result?: any;
+  result?: unknown;
   metrics: {
     stepsCompleted: string[];
     totalSteps: number;
@@ -83,19 +92,18 @@ export class JobQueueService {
   private async initializeProcessor(): Promise<void> {
     try {
       logger.info('🔧 Initializing Bull job processor...');
-      
+
       // Wait for Redis connection to be ready
       await this.waitForRedisConnection();
-      
+
       // Setup job processor
       await this.setupJobProcessor();
-      
+
       // Setup event listeners
       this.setupEventListeners();
-      
+
       this.processorInitialized = true;
       logger.info('✅ Bull job processor initialized successfully');
-      
     } catch (error) {
       logger.error('❌ Failed to initialize job processor:', error);
       throw error;
@@ -108,7 +116,7 @@ export class JobQueueService {
   private async waitForRedisConnection(): Promise<void> {
     const maxRetries = 10;
     let retries = 0;
-    
+
     while (retries < maxRetries) {
       try {
         await redis.ping();
@@ -120,20 +128,22 @@ export class JobQueueService {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
-    
+
     throw new Error('Redis connection not ready after maximum retries');
   }
 
   /**
    * Add a new idea processing job to the queue
    */
-  async addIdeaProcessingJob(data: IdeaProcessingJobData): Promise<Bull.Job<IdeaProcessingJobData>> {
+  async addIdeaProcessingJob(
+    data: IdeaProcessingJobData
+  ): Promise<Bull.Job<IdeaProcessingJobData>> {
     // Ensure processor is initialized
     if (!this.processorInitialized) {
       logger.warn('⚠️ Processor not initialized, waiting...');
       await this.waitForProcessorReady();
     }
-    
+
     logger.info(`📝 Adding idea processing job for project: ${data.projectId}`);
 
     const job = await ideaProcessingQueue.add('process-idea', data, {
@@ -142,7 +152,9 @@ export class JobQueueService {
       delay: 0, // Start immediately
     });
 
-    logger.info(`✅ Job added to queue with Bull ID: ${job.id}, JobID: ${data.jobId}`);
+    logger.info(
+      `✅ Job added to queue with Bull ID: ${job.id}, JobID: ${data.jobId}`
+    );
 
     // Initialize job progress tracking
     await this.updateJobProgress(data.jobId, {
@@ -163,7 +175,9 @@ export class JobQueueService {
 
     // Log queue stats after adding job
     const stats = await this.getQueueStats();
-    logger.info(`📊 Queue stats after adding job - Waiting: ${stats.waiting}, Active: ${stats.active}`);
+    logger.info(
+      `📊 Queue stats after adding job - Waiting: ${stats.waiting}, Active: ${stats.active}`
+    );
 
     return job;
   }
@@ -175,12 +189,12 @@ export class JobQueueService {
     const maxWait = 30000; // 30 seconds
     const checkInterval = 500; // 500ms
     let waited = 0;
-    
+
     while (!this.processorInitialized && waited < maxWait) {
       await new Promise(resolve => setTimeout(resolve, checkInterval));
       waited += checkInterval;
     }
-    
+
     if (!this.processorInitialized) {
       throw new Error('Job processor failed to initialize within timeout');
     }
@@ -192,7 +206,7 @@ export class JobQueueService {
   async getJobProgress(jobId: string): Promise<JobProgress | null> {
     const progressKey = `job_progress:${jobId}`;
     const progressData = await redis.get(progressKey);
-    
+
     if (!progressData) {
       return null;
     }
@@ -203,10 +217,13 @@ export class JobQueueService {
   /**
    * Update job progress
    */
-  async updateJobProgress(jobId: string, progress: Partial<JobProgress>): Promise<void> {
+  async updateJobProgress(
+    jobId: string,
+    progress: Partial<JobProgress>
+  ): Promise<void> {
     const progressKey = `job_progress:${jobId}`;
     const existingProgress = await this.getJobProgress(jobId);
-    
+
     const updatedProgress: JobProgress = {
       ...existingProgress,
       ...progress,
@@ -214,7 +231,7 @@ export class JobQueueService {
     } as JobProgress;
 
     await redis.setex(progressKey, 3600, JSON.stringify(updatedProgress)); // Expire after 1 hour
-    
+
     // Emit progress update via WebSocket
     this.emitProgressUpdate(updatedProgress);
   }
@@ -230,7 +247,10 @@ export class JobQueueService {
       const progressData = await redis.get(key);
       if (progressData) {
         const progress: JobProgress = JSON.parse(progressData);
-        if (progress.userId === userId && ['waiting', 'active', 'delayed'].includes(progress.status)) {
+        if (
+          progress.userId === userId &&
+          ['waiting', 'active', 'delayed'].includes(progress.status)
+        ) {
           activeJobs.push(progress);
         }
       }
@@ -247,7 +267,7 @@ export class JobQueueService {
       const job = await ideaProcessingQueue.getJob(jobId);
       if (job) {
         await job.remove();
-        
+
         // Update progress to cancelled
         await this.updateJobProgress(jobId, {
           status: 'failed',
@@ -298,134 +318,154 @@ export class JobQueueService {
    */
   private async setupJobProcessor(): Promise<void> {
     logger.info('🔧 Setting up Bull job processor for "process-idea" jobs...');
-    
-    ideaProcessingQueue.process('process-idea', 1, async (job: Bull.Job<IdeaProcessingJobData>) => {
-      const { data } = job;
-      const startTime = Date.now();
 
-      try {
-        logger.info(`🚀 Starting idea processing job: ${data.jobId} (Bull ID: ${job.id})`);
+    ideaProcessingQueue.process(
+      'process-idea',
+      1,
+      async (job: Bull.Job<IdeaProcessingJobData>) => {
+        const { data } = job;
+        const startTime = Date.now();
 
-        // Update status to active
-        await this.updateJobProgress(data.jobId, {
-          status: 'active',
-          progress: 10,
-          currentStep: 'Starting AI analysis',
-          startTime: new Date(),
-        });
+        try {
+          logger.info(
+            `🚀 Starting idea processing job: ${data.jobId} (Bull ID: ${job.id})`
+          );
 
-        // Step 1: Save raw idea (10% progress)
-        logger.info(`📝 Job ${data.jobId}: Step 1 - Saving idea to database`);
-        await job.progress(15);
-        await this.updateJobProgress(data.jobId, {
-          progress: 15,
-          currentStep: 'Saving idea to database',
-          metrics: {
-            stepsCompleted: ['idea_saved'],
-            totalSteps: 7,
-            aiCost: 0,
-            tokensUsed: 0,
-            processingTime: Date.now() - startTime,
-          },
-        });
+          // Update status to active
+          await this.updateJobProgress(data.jobId, {
+            status: 'active',
+            progress: 10,
+            currentStep: 'Starting AI analysis',
+            startTime: new Date(),
+          });
 
-        // Step 2: Business analysis (30% progress)
-        logger.info(`🏢 Job ${data.jobId}: Step 2 - Analyzing business model`);
-        await job.progress(30);
-        await this.updateJobProgress(data.jobId, {
-          progress: 30,
-          currentStep: 'Analyzing business model',
-        });
+          // Step 1: Save raw idea (10% progress)
+          logger.info(`📝 Job ${data.jobId}: Step 1 - Saving idea to database`);
+          await job.progress(15);
+          await this.updateJobProgress(data.jobId, {
+            progress: 15,
+            currentStep: 'Saving idea to database',
+            metrics: {
+              stepsCompleted: ['idea_saved'],
+              totalSteps: 7,
+              aiCost: 0,
+              tokensUsed: 0,
+              processingTime: Date.now() - startTime,
+            },
+          });
 
-        // Step 3: Market validation (50% progress)
-        logger.info(`📈 Job ${data.jobId}: Step 3 - Validating market opportunity`);
-        await job.progress(50);
-        await this.updateJobProgress(data.jobId, {
-          progress: 50,
-          currentStep: 'Validating market opportunity',
-        });
+          // Step 2: Business analysis (30% progress)
+          logger.info(
+            `🏢 Job ${data.jobId}: Step 2 - Analyzing business model`
+          );
+          await job.progress(30);
+          await this.updateJobProgress(data.jobId, {
+            progress: 30,
+            currentStep: 'Analyzing business model',
+          });
 
-        // Step 4: Feature generation (70% progress)
-        logger.info(`⚡ Job ${data.jobId}: Step 4 - Generating feature roadmap`);
-        await job.progress(70);
-        await this.updateJobProgress(data.jobId, {
-          progress: 70,
-          currentStep: 'Generating feature roadmap',
-        });
+          // Step 3: Market validation (50% progress)
+          logger.info(
+            `📈 Job ${data.jobId}: Step 3 - Validating market opportunity`
+          );
+          await job.progress(50);
+          await this.updateJobProgress(data.jobId, {
+            progress: 50,
+            currentStep: 'Validating market opportunity',
+          });
 
-        // Step 5: Tech stack recommendation (85% progress)
-        logger.info(`🛠️ Job ${data.jobId}: Step 5 - Recommending technology stack`);
-        await job.progress(85);
-        await this.updateJobProgress(data.jobId, {
-          progress: 85,
-          currentStep: 'Recommending technology stack',
-        });
+          // Step 4: Feature generation (70% progress)
+          logger.info(
+            `⚡ Job ${data.jobId}: Step 4 - Generating feature roadmap`
+          );
+          await job.progress(70);
+          await this.updateJobProgress(data.jobId, {
+            progress: 70,
+            currentStep: 'Generating feature roadmap',
+          });
 
-        // Process the idea using existing service
-        logger.info(`🤖 Job ${data.jobId}: Step 6 - Running AI processing service`);
-        const result = await ideaProcessingService.processIdea({
-          projectId: data.projectId,
-          description: data.description,
-          targetAudience: data.targetAudience,
-          problemStatement: data.problemStatement,
-          desiredFeatures: data.desiredFeatures || [],
-          technicalPreferences: data.technicalPreferences || [],
-        });
+          // Step 5: Tech stack recommendation (85% progress)
+          logger.info(
+            `🛠️ Job ${data.jobId}: Step 5 - Recommending technology stack`
+          );
+          await job.progress(85);
+          await this.updateJobProgress(data.jobId, {
+            progress: 85,
+            currentStep: 'Recommending technology stack',
+          });
 
-        // Step 6: Finalizing results (95% progress)
-        logger.info(`📊 Job ${data.jobId}: Step 7 - Finalizing analysis results`);
-        await job.progress(95);
-        await this.updateJobProgress(data.jobId, {
-          progress: 95,
-          currentStep: 'Finalizing analysis results',
-        });
+          // Process the idea using existing service
+          logger.info(
+            `🤖 Job ${data.jobId}: Step 6 - Running AI processing service`
+          );
+          const result = await ideaProcessingService.processIdea({
+            projectId: data.projectId,
+            description: data.description,
+            targetAudience: data.targetAudience,
+            problemStatement: data.problemStatement,
+            desiredFeatures: data.desiredFeatures || [],
+            technicalPreferences: data.technicalPreferences || [],
+          });
 
-        // Complete the job
-        const endTime = Date.now();
-        const totalProcessingTime = endTime - startTime;
+          // Step 6: Finalizing results (95% progress)
+          logger.info(
+            `📊 Job ${data.jobId}: Step 7 - Finalizing analysis results`
+          );
+          await job.progress(95);
+          await this.updateJobProgress(data.jobId, {
+            progress: 95,
+            currentStep: 'Finalizing analysis results',
+          });
 
-        await this.updateJobProgress(data.jobId, {
-          status: 'completed',
-          progress: 100,
-          currentStep: 'Analysis complete',
-          endTime: new Date(),
-          result,
-          metrics: {
-            stepsCompleted: result.processingMetrics.stepsCompleted,
-            totalSteps: 7,
-            aiCost: result.processingMetrics.aiCost,
-            tokensUsed: result.processingMetrics.tokensUsed,
-            processingTime: totalProcessingTime,
-          },
-        });
+          // Complete the job
+          const endTime = Date.now();
+          const totalProcessingTime = endTime - startTime;
 
-        logger.info(`✅ Completed idea processing job: ${data.jobId} in ${totalProcessingTime}ms`);
-        
-        return result;
+          await this.updateJobProgress(data.jobId, {
+            status: 'completed',
+            progress: 100,
+            currentStep: 'Analysis complete',
+            endTime: new Date(),
+            result,
+            metrics: {
+              stepsCompleted: result.processingMetrics.stepsCompleted,
+              totalSteps: 7,
+              aiCost: result.processingMetrics.aiCost,
+              tokensUsed: result.processingMetrics.tokensUsed,
+              processingTime: totalProcessingTime,
+            },
+          });
 
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        logger.error(`❌ Job ${data.jobId} failed:`, error);
+          logger.info(
+            `✅ Completed idea processing job: ${data.jobId} in ${totalProcessingTime}ms`
+          );
 
-        await this.updateJobProgress(data.jobId, {
-          status: 'failed',
-          progress: 0,
-          currentStep: 'Processing failed',
-          endTime: new Date(),
-          error: errorMessage,
-          metrics: {
-            stepsCompleted: [],
-            totalSteps: 7,
-            aiCost: 0,
-            tokensUsed: 0,
-            processingTime: Date.now() - startTime,
-          },
-        });
+          return result;
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error';
+          logger.error(`❌ Job ${data.jobId} failed:`, error);
 
-        throw error;
+          await this.updateJobProgress(data.jobId, {
+            status: 'failed',
+            progress: 0,
+            currentStep: 'Processing failed',
+            endTime: new Date(),
+            error: errorMessage,
+            metrics: {
+              stepsCompleted: [],
+              totalSteps: 7,
+              aiCost: 0,
+              tokensUsed: 0,
+              processingTime: Date.now() - startTime,
+            },
+          });
+
+          throw error;
+        }
       }
-    });
-    
+    );
+
     logger.info('✅ Bull job processor setup complete');
   }
 
@@ -433,13 +473,13 @@ export class JobQueueService {
    * Setup event listeners for job lifecycle
    */
   private setupEventListeners(): void {
-    ideaProcessingQueue.on('completed', async (job: Bull.Job, result: any) => {
+    ideaProcessingQueue.on('completed', async (job: Bull.Job) => {
       logger.info(`Job ${job.id} completed successfully`);
     });
 
     ideaProcessingQueue.on('failed', async (job: Bull.Job, err: Error) => {
       logger.error(`Job ${job.id} failed:`, err);
-      
+
       // Update final failure status
       if (job.data?.jobId) {
         await this.updateJobProgress(job.data.jobId, {
@@ -456,9 +496,12 @@ export class JobQueueService {
       logger.warn(`Job ${job.id} stalled and will be retried`);
     });
 
-    ideaProcessingQueue.on('progress', async (job: Bull.Job, progress: number) => {
-      logger.debug(`Job ${job.id} progress: ${progress}%`);
-    });
+    ideaProcessingQueue.on(
+      'progress',
+      async (job: Bull.Job, progress: number) => {
+        logger.debug(`Job ${job.id} progress: ${progress}%`);
+      }
+    );
 
     // Clean up completed jobs periodically
     ideaProcessingQueue.on('cleaned', (jobs, type) => {
@@ -470,7 +513,7 @@ export class JobQueueService {
       logger.info('Connected to Redis successfully');
     });
 
-    redis.on('error', (error) => {
+    redis.on('error', error => {
       logger.error('Redis connection error:', error);
     });
 
@@ -484,11 +527,13 @@ export class JobQueueService {
    */
   private emitProgressUpdate(progress: JobProgress): void {
     // Import WebSocket service dynamically to avoid circular dependencies
-    import('./websocket.js').then(({ webSocketService }) => {
-      webSocketService.emitJobProgress(progress);
-    }).catch(error => {
-      logger.error('Failed to emit progress update via WebSocket:', error);
-    });
+    import('./websocket.js')
+      .then(({ webSocketService }) => {
+        webSocketService.emitJobProgress(progress);
+      })
+      .catch(error => {
+        logger.error('Failed to emit progress update via WebSocket:', error);
+      });
   }
 
   /**
@@ -503,10 +548,10 @@ export class JobQueueService {
     try {
       // Test Redis connection
       await redis.ping();
-      
+
       // Get queue stats
       const stats = await this.getQueueStats();
-      
+
       return {
         redis: true,
         queue: true,
@@ -525,20 +570,54 @@ export class JobQueueService {
   }
 
   /**
-   * Graceful shutdown
+   * Shutdown the service
    */
   async shutdown(): Promise<void> {
-    logger.info('Shutting down job queue service...');
-    
+    logger.info('🔄 Shutting down JobQueueService...');
+
     try {
       await ideaProcessingQueue.close();
       await redis.quit();
-      logger.info('Job queue service shut down successfully');
+      logger.info('✅ JobQueueService shutdown complete');
     } catch (error) {
-      logger.error('Error during job queue shutdown:', error);
+      logger.error('❌ Error during JobQueueService shutdown:', error);
+    }
+  }
+
+  /**
+   * Clear all jobs from the queue (for testing purposes)
+   */
+  async clearAllJobs(): Promise<void> {
+    try {
+      await ideaProcessingQueue.clean(0, 'completed');
+      await ideaProcessingQueue.clean(0, 'failed');
+      await ideaProcessingQueue.clean(0, 'active');
+
+      // Clear waiting jobs differently as they might not be cleanable the same way
+      const waitingJobs = await ideaProcessingQueue.getWaiting();
+      for (const job of waitingJobs) {
+        await job.remove();
+      }
+
+      // Clear delayed jobs
+      const delayedJobs = await ideaProcessingQueue.getDelayed();
+      for (const job of delayedJobs) {
+        await job.remove();
+      }
+
+      // Also clear Redis keys for job progress tracking
+      const keys = await redis.keys('job:*');
+      if (keys.length > 0) {
+        await redis.del(...keys);
+      }
+
+      logger.info('✅ All jobs cleared from queue');
+    } catch (error) {
+      logger.error('❌ Error clearing jobs:', error);
+      throw error;
     }
   }
 }
 
 // Export singleton instance
-export const jobQueueService = JobQueueService.getInstance(); 
+export const jobQueueService = JobQueueService.getInstance();

@@ -160,7 +160,7 @@ const DashboardComponent = () => {
             <div>
               <h1 className="text-3xl font-bold text-dark-text-primary">
                 Welcome back, {user?.name}! 👋
-          </h1>
+              </h1>
               <p className="text-dark-text-secondary mt-2">
                 Ready to build something amazing?
               </p>
@@ -259,12 +259,12 @@ const DashboardComponent = () => {
                   </p>
                 </div>
               </div>
-              </div>
+            </div>
 
             <div className="bg-dark-input-bg rounded-lg p-6 border border-dark-border">
               <h3 className="text-lg font-semibold text-dark-text-primary mb-4">
                 Coming Soon Features:
-                </h3>
+              </h3>
               <div className="grid md:grid-cols-2 gap-4">
                 <ul className="text-dark-text-secondary space-y-2">
                   <li>• 🎯 Project creation and management</li>
@@ -279,9 +279,9 @@ const DashboardComponent = () => {
                   <li>• 🎨 Custom templates</li>
                 </ul>
               </div>
-              </div>
             </div>
           </div>
+        </div>
       </div>
     </div>
   );

@@ -5,6 +5,8 @@ import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { connectDatabase, checkDatabaseHealth } from '@/config/database';
 import { validateAuthConfig } from '@/config/auth';
 import { logger } from '@/utils/logger';
@@ -18,8 +20,13 @@ import projectRoutes from '@/routes/projects';
 import collaborationRoutes from '@/routes/collaboration';
 import ideaProcessingRoutes from '@/routes/ideaProcessing';
 
-// Load environment variables
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from the project root
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config(); // fallback
 
 const app = express();
 const server = createServer(app);
@@ -87,7 +94,8 @@ app.get('/health', async (_req, res) => {
   const queueHealth = await jobQueueService.healthCheck();
   const wsHealth = webSocketService.healthCheck();
 
-  const allHealthy = dbHealthy && queueHealth.redis && queueHealth.queue && wsHealth.status;
+  const allHealthy =
+    dbHealthy && queueHealth.redis && queueHealth.queue && wsHealth.status;
 
   res.status(allHealthy ? 200 : 503).json({
     status: allHealthy ? 'OK' : 'Service Unavailable',
@@ -264,13 +272,13 @@ if (process.env.NODE_ENV !== 'test') {
   // Graceful shutdown handling
   process.on('SIGTERM', async () => {
     logger.info('SIGTERM received, shutting down gracefully...');
-    
+
     try {
       await Promise.all([
         webSocketService.shutdown(),
         jobQueueService.shutdown(),
       ]);
-      
+
       server.close(() => {
         logger.info('Server closed successfully');
         process.exit(0);
@@ -283,13 +291,13 @@ if (process.env.NODE_ENV !== 'test') {
 
   process.on('SIGINT', async () => {
     logger.info('SIGINT received, shutting down gracefully...');
-    
+
     try {
       await Promise.all([
         webSocketService.shutdown(),
         jobQueueService.shutdown(),
       ]);
-      
+
       server.close(() => {
         logger.info('Server closed successfully');
         process.exit(0);

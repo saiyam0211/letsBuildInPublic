@@ -1,6 +1,38 @@
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables FIRST - try multiple paths
+const envPaths = [
+  path.resolve(__dirname, '../../../.env'), // From src/config/ to project root
+  path.resolve(process.cwd(), '../.env'), // From backend/ to project root
+  path.resolve(process.cwd(), '.env'), // Current directory
+  '.env', // Fallback
+];
+
+for (const envPath of envPaths) {
+  console.log(`🔍 Trying to load environment from: ${envPath}`);
+  const result = dotenv.config({ path: envPath });
+  if (!result.error) {
+    console.log(`📄 File found at: ${envPath}`);
+    if (process.env.OPENAI_API_KEY) {
+      console.log(`✅ Environment variables loaded from: ${envPath}`);
+      console.log(
+        `🔑 OPENAI_API_KEY found: ${process.env.OPENAI_API_KEY.substring(0, 6)}...`
+      );
+      break;
+    } else {
+      console.log(`⚠️  OPENAI_API_KEY not found in: ${envPath}`);
+    }
+  } else {
+    console.log(`❌ Error loading from ${envPath}: ${result.error.message}`);
+  }
+}
+
+import { logger as _logger } from '@/utils/logger';
 
 export interface AIConfig {
   openai: {
@@ -38,30 +70,65 @@ export interface AIConfig {
 
 // Validate required environment variables
 const validateEnvVars = (): void => {
+  console.log(
+    `🔧 Environment validation for NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`
+  );
+  console.log(`🔑 OPENAI_API_KEY present: ${!!process.env.OPENAI_API_KEY}`);
+
   // Skip validation in test environment
   if (process.env.NODE_ENV === 'test') {
-    console.log('🧪 Test environment detected - skipping OpenAI API key validation');
+    console.log(
+      '🧪 Test environment detected - skipping OpenAI API key validation'
+    );
     return;
   }
 
   const required = ['OPENAI_API_KEY'];
-  const missing = required.filter(key => !process.env[key]);
-  
+  const missing = required.filter(key => {
+    const exists = !!process.env[key];
+    console.log(`🔍 Checking ${key}: ${exists ? 'FOUND' : 'MISSING'}`);
+    return !exists;
+  });
+
   if (missing.length > 0) {
-    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+    console.error(
+      `❌ Missing required environment variables: ${missing.join(', ')}`
+    );
+    console.error(
+      `🚨 Available environment keys: ${Object.keys(process.env)
+        .filter(k => k.includes('OPENAI'))
+        .join(', ')}`
+    );
+
+    // In development, warn but don't crash
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(
+        '⚠️  Development mode: Using fallback values for missing environment variables'
+      );
+      return;
+    }
+
+    throw new Error(
+      `Missing required environment variables: ${missing.join(', ')}`
+    );
   }
 
   // Validate OpenAI API key format
   const apiKey = process.env.OPENAI_API_KEY!;
   if (!apiKey.startsWith('sk-') || apiKey.length < 40) {
-    throw new Error('Invalid OpenAI API key format. Must start with "sk-" and be at least 40 characters long.');
+    throw new Error(
+      'Invalid OpenAI API key format. Must start with "sk-" and be at least 40 characters long.'
+    );
   }
 };
 
 // Get API key with test fallback
 const getApiKey = (): string => {
   if (process.env.NODE_ENV === 'test') {
-    return process.env.OPENAI_API_KEY || 'sk-test-mock-api-key-for-testing-12345678901234567890';
+    return (
+      process.env.OPENAI_API_KEY ||
+      'sk-test-mock-api-key-for-testing-12345678901234567890'
+    );
   }
   return process.env.OPENAI_API_KEY!;
 };
@@ -80,7 +147,9 @@ const developmentConfig: AIConfig = {
   },
   langchain: {
     tracingEnabled: process.env.LANGCHAIN_TRACING_V2 === 'true',
-    ...(process.env.LANGCHAIN_API_KEY && { apiKey: process.env.LANGCHAIN_API_KEY }),
+    ...(process.env.LANGCHAIN_API_KEY && {
+      apiKey: process.env.LANGCHAIN_API_KEY,
+    }),
   },
   processing: {
     maxConcurrentJobs: 3,
@@ -91,13 +160,14 @@ const developmentConfig: AIConfig = {
   features: {
     enableAIProcessing: process.env.ENABLE_AI_PROCESSING !== 'false',
     enableMarketAnalysis: process.env.ENABLE_MARKET_ANALYSIS !== 'false',
-    enableTechRecommendations: process.env.ENABLE_TECH_RECOMMENDATIONS !== 'false',
+    enableTechRecommendations:
+      process.env.ENABLE_TECH_RECOMMENDATIONS !== 'false',
     enableFeatureGeneration: process.env.ENABLE_FEATURE_GENERATION !== 'false',
   },
   costs: {
-    maxCostPerRequest: 0.50, // $0.50 per request max
-    dailyCostLimit: 10.00, // $10 daily limit for dev
-    warningThreshold: 0.80, // Warn at 80% of daily limit
+    maxCostPerRequest: 0.5, // $0.50 per request max
+    dailyCostLimit: 10.0, // $10 daily limit for dev
+    warningThreshold: 0.8, // Warn at 80% of daily limit
   },
 };
 
@@ -114,7 +184,9 @@ const productionConfig: AIConfig = {
   },
   langchain: {
     tracingEnabled: process.env.LANGCHAIN_TRACING_V2 === 'true',
-    ...(process.env.LANGCHAIN_API_KEY && { apiKey: process.env.LANGCHAIN_API_KEY }),
+    ...(process.env.LANGCHAIN_API_KEY && {
+      apiKey: process.env.LANGCHAIN_API_KEY,
+    }),
   },
   processing: {
     maxConcurrentJobs: 10,
@@ -125,13 +197,14 @@ const productionConfig: AIConfig = {
   features: {
     enableAIProcessing: process.env.ENABLE_AI_PROCESSING !== 'false',
     enableMarketAnalysis: process.env.ENABLE_MARKET_ANALYSIS !== 'false',
-    enableTechRecommendations: process.env.ENABLE_TECH_RECOMMENDATIONS !== 'false',
+    enableTechRecommendations:
+      process.env.ENABLE_TECH_RECOMMENDATIONS !== 'false',
     enableFeatureGeneration: process.env.ENABLE_FEATURE_GENERATION !== 'false',
   },
   costs: {
-    maxCostPerRequest: 2.00, // $2.00 per request max
-    dailyCostLimit: 100.00, // $100 daily limit for production
-    warningThreshold: 0.80, // Warn at 80% of daily limit
+    maxCostPerRequest: 2.0, // $2.00 per request max
+    dailyCostLimit: 100.0, // $100 daily limit for production
+    warningThreshold: 0.8, // Warn at 80% of daily limit
   },
 };
 
@@ -162,19 +235,19 @@ const testConfig: AIConfig = {
     enableFeatureGeneration: true,
   },
   costs: {
-    maxCostPerRequest: 1.00,
-    dailyCostLimit: 5.00, // Lower limit for tests
-    warningThreshold: 0.80,
+    maxCostPerRequest: 1.0,
+    dailyCostLimit: 5.0, // Lower limit for tests
+    warningThreshold: 0.8,
   },
 };
 
 // Initialize and validate configuration
 const initializeAIConfig = (): AIConfig => {
   validateEnvVars();
-  
+
   const environment = process.env.NODE_ENV || 'development';
   let config: AIConfig;
-  
+
   switch (environment) {
     case 'test':
       config = testConfig;
@@ -185,12 +258,16 @@ const initializeAIConfig = (): AIConfig => {
     default:
       config = developmentConfig;
   }
-  
-  console.log(`🤖 AI Configuration initialized for ${environment.toUpperCase()} mode`);
+
+  console.log(
+    `🤖 AI Configuration initialized for ${environment.toUpperCase()} mode`
+  );
   console.log(`   Model: ${config.openai.model}`);
-  console.log(`   Rate Limits: ${config.openai.rateLimitRPM} RPM, ${config.openai.rateLimitTPM} TPM`);
+  console.log(
+    `   Rate Limits: ${config.openai.rateLimitRPM} RPM, ${config.openai.rateLimitTPM} TPM`
+  );
   console.log(`   Daily Cost Limit: $${config.costs.dailyCostLimit}`);
-  
+
   return config;
 };
 
@@ -219,7 +296,8 @@ export class RateLimiter {
 
     // Check rate limits
     const withinRPMLimit = this.requests.length < this.config.rateLimitRPM;
-    const withinTPMLimit = (this.tokens + estimatedTokens) <= this.config.rateLimitTPM;
+    const withinTPMLimit =
+      this.tokens + estimatedTokens <= this.config.rateLimitTPM;
 
     return withinRPMLimit && withinTPMLimit;
   }
@@ -232,12 +310,12 @@ export class RateLimiter {
   getWaitTime(): number {
     const now = Date.now();
     const oldestRequest = this.requests[0];
-    
+
     if (!oldestRequest) return 0;
-    
+
     const timeSinceOldest = now - oldestRequest;
-    const waitTime = (60 * 1000) - timeSinceOldest;
-    
+    const waitTime = 60 * 1000 - timeSinceOldest;
+
     return Math.max(0, waitTime);
   }
 }
@@ -251,15 +329,20 @@ export class CostTracker {
 
   canAffordRequest(estimatedCost: number): boolean {
     this.resetIfNewDay();
-    return (this.dailyCost + estimatedCost) <= this.config.dailyCostLimit;
+    return this.dailyCost + estimatedCost <= this.config.dailyCostLimit;
   }
 
   recordCost(cost: number): void {
     this.resetIfNewDay();
     this.dailyCost += cost;
 
-    if (this.dailyCost >= this.config.dailyCostLimit * this.config.warningThreshold) {
-      console.warn(`⚠️  AI costs approaching daily limit: $${this.dailyCost.toFixed(2)}/$${this.config.dailyCostLimit}`);
+    if (
+      this.dailyCost >=
+      this.config.dailyCostLimit * this.config.warningThreshold
+    ) {
+      console.warn(
+        `⚠️  AI costs approaching daily limit: $${this.dailyCost.toFixed(2)}/$${this.config.dailyCostLimit}`
+      );
     }
   }
 
@@ -279,4 +362,4 @@ export class CostTracker {
 }
 
 export const globalRateLimiter = new RateLimiter(aiConfig.openai);
-export const globalCostTracker = new CostTracker(aiConfig.costs); 
+export const globalCostTracker = new CostTracker(aiConfig.costs);

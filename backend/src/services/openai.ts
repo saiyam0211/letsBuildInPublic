@@ -1,5 +1,9 @@
 import OpenAI from 'openai';
-import { aiConfig, globalRateLimiter, globalCostTracker } from '../config/ai.js';
+import {
+  aiConfig,
+  globalRateLimiter,
+  globalCostTracker,
+} from '../config/ai.js';
 
 export interface OpenAIResponse {
   content: string;
@@ -10,7 +14,13 @@ export interface OpenAIResponse {
 }
 
 export interface OpenAIError {
-  type: 'rate_limit' | 'insufficient_quota' | 'api_error' | 'network_error' | 'timeout' | 'validation_error';
+  type:
+    | 'rate_limit'
+    | 'insufficient_quota'
+    | 'api_error'
+    | 'network_error'
+    | 'timeout'
+    | 'validation_error';
   message: string;
   retryAfter?: number;
   canRetry: boolean;
@@ -34,14 +44,26 @@ export class OpenAIService {
   /**
    * Calculate estimated cost for a request
    */
-  private estimateCost(inputTokens: number, outputTokens: number, model: string): number {
+  private estimateCost(
+    inputTokens: number,
+    outputTokens: number,
+    model: string
+  ): number {
     const modelPricing = this.pricing[model as keyof typeof this.pricing];
     if (!modelPricing) {
-      console.warn(`⚠️  Unknown model pricing for ${model}, using GPT-4 pricing`);
-      return this.pricing['gpt-4'].input * (inputTokens / 1000) + this.pricing['gpt-4'].output * (outputTokens / 1000);
+      console.warn(
+        `⚠️  Unknown model pricing for ${model}, using GPT-4 pricing`
+      );
+      return (
+        this.pricing['gpt-4'].input * (inputTokens / 1000) +
+        this.pricing['gpt-4'].output * (outputTokens / 1000)
+      );
     }
-    
-    return modelPricing.input * (inputTokens / 1000) + modelPricing.output * (outputTokens / 1000);
+
+    return (
+      modelPricing.input * (inputTokens / 1000) +
+      modelPricing.output * (outputTokens / 1000)
+    );
   }
 
   /**
@@ -54,52 +76,80 @@ export class OpenAIService {
   /**
    * Handle OpenAI API errors with proper categorization
    */
-  private handleOpenAIError(error: any): OpenAIError {
-    if (error.status === 429) {
-      const retryAfter = error.headers?.['retry-after'] ? parseInt(error.headers['retry-after']) : 60;
-      return {
-        type: 'rate_limit',
-        message: 'Rate limit exceeded. Please wait before making another request.',
-        retryAfter: retryAfter * 1000, // Convert to milliseconds
-        canRetry: true,
+  private handleOpenAIError(error: unknown): OpenAIError {
+    if (error && typeof error === 'object' && 'status' in error) {
+      const statusError = error as {
+        status: number;
+        headers?: Record<string, string>;
+        message?: string;
       };
+
+      if (statusError.status === 429) {
+        const retryAfter = statusError.headers?.['retry-after']
+          ? parseInt(statusError.headers['retry-after'])
+          : 60;
+        return {
+          type: 'rate_limit',
+          message:
+            'Rate limit exceeded. Please wait before making another request.',
+          retryAfter: retryAfter * 1000, // Convert to milliseconds
+          canRetry: true,
+        };
+      }
+
+      if (
+        statusError.status === 402 ||
+        (statusError.status === 400 && statusError.message?.includes('quota'))
+      ) {
+        return {
+          type: 'insufficient_quota',
+          message:
+            'Insufficient quota or billing issue. Please check your OpenAI account.',
+          canRetry: false,
+        };
+      }
+
+      if (statusError.status === 400) {
+        return {
+          type: 'validation_error',
+          message: statusError.message || 'Invalid request parameters.',
+          canRetry: false,
+        };
+      }
     }
 
-    if (error.status === 402 || error.status === 400 && error.message?.includes('quota')) {
-      return {
-        type: 'insufficient_quota',
-        message: 'Insufficient quota or billing issue. Please check your OpenAI account.',
-        canRetry: false,
-      };
+    if (error && typeof error === 'object' && 'code' in error) {
+      const codeError = error as { code: string; message?: string };
+
+      if (codeError.code === 'ENOTFOUND' || codeError.code === 'ECONNREFUSED') {
+        return {
+          type: 'network_error',
+          message:
+            'Network connection failed. Please check your internet connection.',
+          canRetry: true,
+        };
+      }
+
+      if (
+        codeError.code === 'TIMEOUT' ||
+        codeError.message?.includes('timeout')
+      ) {
+        return {
+          type: 'timeout',
+          message:
+            'Request timed out. The operation took too long to complete.',
+          canRetry: true,
+        };
+      }
     }
 
-    if (error.status === 400) {
-      return {
-        type: 'validation_error',
-        message: error.message || 'Invalid request parameters.',
-        canRetry: false,
-      };
-    }
-
-    if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
-      return {
-        type: 'network_error',
-        message: 'Network connection failed. Please check your internet connection.',
-        canRetry: true,
-      };
-    }
-
-    if (error.code === 'TIMEOUT' || error.message?.includes('timeout')) {
-      return {
-        type: 'timeout',
-        message: 'Request timed out. The operation took too long to complete.',
-        canRetry: true,
-      };
-    }
-
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'An unexpected error occurred with the OpenAI API.';
     return {
       type: 'api_error',
-      message: error.message || 'An unexpected error occurred with the OpenAI API.',
+      message,
       canRetry: true,
     };
   }
@@ -117,19 +167,25 @@ export class OpenAIService {
         return await operation();
       } catch (error) {
         const openAIError = this.handleOpenAIError(error);
-        
+
         if (!openAIError.canRetry || attempt === maxRetries) {
-          console.error(`❌ OpenAI request failed after ${attempt + 1} attempts:`, openAIError.message);
+          console.error(
+            `❌ OpenAI request failed after ${attempt + 1} attempts:`,
+            openAIError.message
+          );
           throw new Error(`OpenAI ${openAIError.type}: ${openAIError.message}`);
         }
 
-        const delay = openAIError.retryAfter || baseDelay * Math.pow(2, attempt);
-        console.warn(`⚠️  Attempt ${attempt + 1} failed (${openAIError.type}), retrying in ${delay}ms...`);
-        
+        const delay =
+          openAIError.retryAfter || baseDelay * Math.pow(2, attempt);
+        console.warn(
+          `⚠️  Attempt ${attempt + 1} failed (${openAIError.type}), retrying in ${delay}ms...`
+        );
+
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
-    
+
     throw new Error('Max retries exceeded');
   }
 
@@ -151,30 +207,46 @@ export class OpenAIService {
     const temperature = options.temperature ?? aiConfig.openai.temperature;
 
     // Estimate tokens and cost before making request
-    const systemTokens = options.systemMessage ? this.estimateInputTokens(options.systemMessage) : 0;
+    const systemTokens = options.systemMessage
+      ? this.estimateInputTokens(options.systemMessage)
+      : 0;
     const promptTokens = this.estimateInputTokens(prompt);
     const estimatedInputTokens = systemTokens + promptTokens;
     const estimatedOutputTokens = maxTokens;
-    const estimatedCost = this.estimateCost(estimatedInputTokens, estimatedOutputTokens, model);
+    const estimatedCost = this.estimateCost(
+      estimatedInputTokens,
+      estimatedOutputTokens,
+      model
+    );
 
     // Check rate limits
-    if (!globalRateLimiter.canMakeRequest(estimatedInputTokens + estimatedOutputTokens)) {
+    if (
+      !globalRateLimiter.canMakeRequest(
+        estimatedInputTokens + estimatedOutputTokens
+      )
+    ) {
       const waitTime = globalRateLimiter.getWaitTime();
-      throw new Error(`Rate limit reached. Please wait ${Math.ceil(waitTime / 1000)} seconds before making another request.`);
+      throw new Error(
+        `Rate limit reached. Please wait ${Math.ceil(waitTime / 1000)} seconds before making another request.`
+      );
     }
 
     // Check cost limits
     if (!globalCostTracker.canAffordRequest(estimatedCost)) {
-      throw new Error(`Daily cost limit would be exceeded. Estimated cost: $${estimatedCost.toFixed(4)}, remaining budget: $${(aiConfig.costs.dailyCostLimit - globalCostTracker.getDailyCost()).toFixed(2)}`);
+      throw new Error(
+        `Daily cost limit would be exceeded. Estimated cost: $${estimatedCost.toFixed(4)}, remaining budget: $${(aiConfig.costs.dailyCostLimit - globalCostTracker.getDailyCost()).toFixed(2)}`
+      );
     }
 
     // Check feature availability
     if (!aiConfig.features.enableAIProcessing) {
-      throw new Error('AI processing is currently disabled. Please check configuration.');
+      throw new Error(
+        'AI processing is currently disabled. Please check configuration.'
+      );
     }
 
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [];
-    
+
     if (options.systemMessage) {
       messages.push({
         role: 'system',
@@ -187,7 +259,9 @@ export class OpenAIService {
       content: prompt,
     });
 
-    console.log(`🤖 Making OpenAI request: ${model}, estimated cost: $${estimatedCost.toFixed(4)}`);
+    console.log(
+      `🤖 Making OpenAI request: ${model}, estimated cost: $${estimatedCost.toFixed(4)}`
+    );
 
     const response = await this.withRetry(async () => {
       return await this.client.chat.completions.create({
@@ -204,15 +278,22 @@ export class OpenAIService {
     const usage = response.usage;
     const actualInputTokens = usage?.prompt_tokens || estimatedInputTokens;
     const actualOutputTokens = usage?.completion_tokens || 0;
-    const totalTokens = usage?.total_tokens || (actualInputTokens + actualOutputTokens);
-    const actualCost = this.estimateCost(actualInputTokens, actualOutputTokens, model);
+    const totalTokens =
+      usage?.total_tokens || actualInputTokens + actualOutputTokens;
+    const actualCost = this.estimateCost(
+      actualInputTokens,
+      actualOutputTokens,
+      model
+    );
     const processingTime = Date.now() - startTime;
 
     // Record metrics
     globalRateLimiter.recordRequest(totalTokens);
     globalCostTracker.recordCost(actualCost);
 
-    console.log(`✅ OpenAI request completed: ${totalTokens} tokens, $${actualCost.toFixed(4)}, ${processingTime}ms`);
+    console.log(
+      `✅ OpenAI request completed: ${totalTokens} tokens, $${actualCost.toFixed(4)}, ${processingTime}ms`
+    );
 
     return {
       content,
@@ -284,7 +365,9 @@ For each feature provide:
 
 Respond in structured JSON format.`;
 
-    const analysisContext = analysisResults ? `\n\n**Previous Analysis Results:**\n${analysisResults}` : '';
+    const analysisContext = analysisResults
+      ? `\n\n**Previous Analysis Results:**\n${analysisResults}`
+      : '';
 
     const prompt = `Generate features for this SaaS idea:
 
@@ -322,7 +405,9 @@ Provide rationale for each choice, cost estimates, and alternative options.
 
 Respond in structured JSON format with explanations.`;
 
-    const constraintsText = constraints ? `\n\n**Constraints:** ${constraints}` : '';
+    const constraintsText = constraints
+      ? `\n\n**Constraints:** ${constraints}`
+      : '';
 
     const prompt = `Recommend a tech stack for:
 
@@ -348,7 +433,8 @@ Provide detailed recommendations with cost considerations and alternatives.`;
       model: aiConfig.openai.model,
       dailyCost: globalCostTracker.getDailyCost(),
       dailyLimit: aiConfig.costs.dailyCostLimit,
-      remainingBudget: aiConfig.costs.dailyCostLimit - globalCostTracker.getDailyCost(),
+      remainingBudget:
+        aiConfig.costs.dailyCostLimit - globalCostTracker.getDailyCost(),
       rateLimitStatus: {
         canMakeRequest: globalRateLimiter.canMakeRequest(),
         waitTime: globalRateLimiter.getWaitTime(),
@@ -358,4 +444,4 @@ Provide detailed recommendations with cost considerations and alternatives.`;
   }
 }
 
-export const openAIService = new OpenAIService(); 
+export const openAIService = new OpenAIService();

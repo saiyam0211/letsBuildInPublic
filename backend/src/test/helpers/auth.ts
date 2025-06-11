@@ -1,5 +1,6 @@
 import { AuthService } from '../../services/authService';
 import { IUser } from '../../models/User';
+import '../setup/emailMock'; // Import email service mock
 
 interface TestUserResult {
   user: IUser;

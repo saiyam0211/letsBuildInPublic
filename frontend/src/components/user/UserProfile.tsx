@@ -1,42 +1,40 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { cn } from '../../lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  User, 
-  Eye, 
-  EyeOff, 
-  Save, 
-  X, 
-  Edit3, 
-  Shield, 
-  Bell, 
-  Globe, 
-  CheckCircle, 
-  AlertCircle,
-  Calendar,
-  Camera,
-  ArrowLeft,
+import {
+  User,
   Settings,
-  Clock,
-  Mail,
-  UserCheck,
-  Key,
-  Smartphone,
-  Monitor,
+  Shield,
+  Eye,
+  EyeOff,
+  Camera,
+  Calendar,
   Palette,
   BellRing,
-  Languages,
+  Save,
+  X,
+  Edit3,
+  Bell,
+  Globe,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  Monitor,
   Check,
-  ExternalLink
+  ExternalLink,
+  Key,
+  Smartphone,
+  Languages,
+  ArrowLeft,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { getCurrentUser, clearError } from '../../store/slices/authSlice';
+import { getCurrentUser } from '../../store/slices/authSlice';
 import { authAPI } from '../../utils/api';
-import { Label } from '../ui/Label';
+import { Label as UILabel } from '../ui/Label';
 import { EnhancedInput } from '../ui/EnhancedInput';
+import { motion, AnimatePresence } from 'motion/react';
+import { cn } from '../../lib/utils';
 import { useToastContext } from '../providers/ToastProvider';
 import { Link } from 'react-router-dom';
 
@@ -64,9 +62,11 @@ export const UserProfile: React.FC = () => {
   const dispatch = useAppDispatch();
   const { user, isLoading } = useAppSelector(state => state.auth);
   const toast = useToastContext();
-  
+
   // State management - only one form can be edited at a time
-  const [activeEditMode, setActiveEditMode] = useState<'none' | 'profile' | 'password'>('none');
+  const [activeEditMode, setActiveEditMode] = useState<
+    'none' | 'profile' | 'password'
+  >('none');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -165,12 +165,13 @@ export const UserProfile: React.FC = () => {
       toast.updateToast(loadingId, {
         type: 'success',
         title: 'Password updated successfully!',
-        message: 'Your password has been changed. Please use your new password for future logins.',
+        message:
+          'Your password has been changed. Please use your new password for future logins.',
       });
 
       setActiveEditMode('none');
       resetPassword();
-      
+
       setTimeout(() => {
         toast.removeToast(loadingId);
       }, 3000);
@@ -230,24 +231,29 @@ export const UserProfile: React.FC = () => {
   };
 
   // Status Badge Component
-  const StatusBadge = ({ 
-    icon: Icon, 
-    label, 
-    variant = 'success' 
+  const StatusBadge = ({
+    icon: Icon,
+    label,
+    variant = 'success',
   }: {
-    icon: React.ElementType; 
-    label: string; 
+    icon: React.ElementType;
+    label: string;
     variant?: 'success' | 'warning' | 'info' | 'error';
   }) => {
     const variants = {
-      success: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
-      warning: "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
-      info: "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
-      error: "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800"
+      success:
+        'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+      warning:
+        'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+      info: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+      error:
+        'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800',
     };
 
     return (
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium transition-colors ${variants[variant]}`}>
+      <span
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium transition-colors ${variants[variant]}`}
+      >
         <Icon className="w-3 h-3" />
         {label}
       </span>
@@ -255,13 +261,13 @@ export const UserProfile: React.FC = () => {
   };
 
   // Info Card Component
-  const InfoCard = ({ 
-    icon: Icon, 
-    title, 
-    description, 
-    children, 
+  const InfoCard = ({
+    icon: Icon,
+    title,
+    description,
+    children,
     actionButton,
-    iconColor = "bg-gradient-to-br from-blue-500 to-blue-600"
+    iconColor = 'bg-gradient-to-br from-blue-500 to-blue-600',
   }: {
     icon: React.ElementType;
     title: string;
@@ -270,7 +276,7 @@ export const UserProfile: React.FC = () => {
     actionButton?: React.ReactNode;
     iconColor?: string;
   }) => (
-    <motion.div 
+    <motion.div
       initial={hasAnimated ? false : { opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -278,7 +284,9 @@ export const UserProfile: React.FC = () => {
     >
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-center space-x-4">
-          <div className={`w-12 h-12 ${iconColor} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300`}>
+          <div
+            className={`w-12 h-12 ${iconColor} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300`}
+          >
             <Icon className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -299,50 +307,64 @@ export const UserProfile: React.FC = () => {
   // Quick Stats Component - Memoized to prevent re-renders
   const QuickStats = React.memo(() => (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-      <motion.div 
+      <motion.div
         initial={hasAnimated ? false : { opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: hasAnimated ? 0 : 0.1 }}
         className="bg-white dark:bg-black rounded-xl p-4 border border-neutral-200 dark:border-neutral-800 text-center hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
       >
         <Calendar className="w-5 h-5 text-blue-500 mx-auto mb-2" />
-        <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">Member Since</p>
+        <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">
+          Member Since
+        </p>
         <p className="font-semibold text-neutral-800 dark:text-neutral-200">
           {user?.createdAt ? new Date(user.createdAt).getFullYear() : 'N/A'}
         </p>
       </motion.div>
 
-      <motion.div 
+      <motion.div
         initial={hasAnimated ? false : { opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: hasAnimated ? 0 : 0.2 }}
         className="bg-white dark:bg-black rounded-xl p-4 border border-neutral-200 dark:border-neutral-800 text-center hover:border-green-300 dark:hover:border-green-700 transition-colors"
       >
         <Clock className="w-5 h-5 text-green-500 mx-auto mb-2" />
-        <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">Last Active</p>
-        <p className="font-semibold text-neutral-800 dark:text-neutral-200">Today</p>
+        <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">
+          Last Active
+        </p>
+        <p className="font-semibold text-neutral-800 dark:text-neutral-200">
+          Today
+        </p>
       </motion.div>
 
-      <motion.div 
+      <motion.div
         initial={hasAnimated ? false : { opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: hasAnimated ? 0 : 0.3 }}
         className="bg-white dark:bg-black rounded-xl p-4 border border-neutral-200 dark:border-neutral-800 text-center hover:border-purple-300 dark:hover:border-purple-700 transition-colors"
       >
         <Shield className="w-5 h-5 text-purple-500 mx-auto mb-2" />
-        <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">Security</p>
-        <p className="font-semibold text-neutral-800 dark:text-neutral-200">High</p>
+        <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">
+          Security
+        </p>
+        <p className="font-semibold text-neutral-800 dark:text-neutral-200">
+          High
+        </p>
       </motion.div>
 
-      <motion.div 
+      <motion.div
         initial={hasAnimated ? false : { opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: hasAnimated ? 0 : 0.4 }}
         className="bg-white dark:bg-black rounded-xl p-4 border border-neutral-200 dark:border-neutral-800 text-center hover:border-orange-300 dark:hover:border-orange-700 transition-colors"
       >
         <Monitor className="w-5 h-5 text-orange-500 mx-auto mb-2" />
-        <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">Sessions</p>
-        <p className="font-semibold text-neutral-800 dark:text-neutral-200">1 Active</p>
+        <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">
+          Sessions
+        </p>
+        <p className="font-semibold text-neutral-800 dark:text-neutral-200">
+          1 Active
+        </p>
       </motion.div>
     </div>
   ));
@@ -350,9 +372,9 @@ export const UserProfile: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-950 dark:to-neutral-800 flex items-center justify-center">
-        <motion.div 
+        <motion.div
           animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
           className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full"
         />
       </div>
@@ -364,11 +386,11 @@ export const UserProfile: React.FC = () => {
       {/* Enhanced Background */}
       <div className="absolute h-full w-full bg-white dark:bg-black bg-grid-small-black/[0.2] dark:bg-grid-small-white/[0.2] [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-transparent to-purple-50/50 dark:from-blue-900/5 dark:via-transparent dark:to-purple-900/5" />
-      
+
       <div className="relative z-10 flex min-h-screen items-center justify-center p-4">
         <div className="w-full max-w-6xl space-y-8">
           {/* Enhanced Header */}
-          <motion.div 
+          <motion.div
             initial={hasAnimated ? false : { opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
@@ -402,7 +424,7 @@ export const UserProfile: React.FC = () => {
                 !isEditingProfile && (
                   <button
                     type="button"
-                    onClick={(e) => {
+                    onClick={e => {
                       e.preventDefault();
                       setActiveEditMode('profile');
                     }}
@@ -418,16 +440,21 @@ export const UserProfile: React.FC = () => {
             >
               <AnimatePresence mode="wait">
                 {isEditingProfile ? (
-                  <motion.form 
+                  <motion.form
                     key="edit"
                     initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
+                    animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    onSubmit={handleProfileSubmit(onProfileSubmit)} 
+                    onSubmit={handleProfileSubmit(onProfileSubmit)}
                     className="space-y-6"
                   >
                     <LabelInputContainer>
-                      <Label htmlFor="name" className="text-neutral-700 dark:text-neutral-300">Full Name</Label>
+                      <UILabel
+                        htmlFor="name"
+                        className="text-neutral-700 dark:text-neutral-300"
+                      >
+                        Full Name
+                      </UILabel>
                       <EnhancedInput
                         {...registerProfile('name')}
                         id="name"
@@ -436,7 +463,7 @@ export const UserProfile: React.FC = () => {
                         className="transition-all duration-300"
                       />
                       {profileErrors.name && (
-                        <motion.p 
+                        <motion.p
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           className="text-red-500 text-sm flex items-center gap-1"
@@ -448,7 +475,12 @@ export const UserProfile: React.FC = () => {
                     </LabelInputContainer>
 
                     <LabelInputContainer>
-                      <Label htmlFor="email" className="text-neutral-700 dark:text-neutral-300">Email Address</Label>
+                      <UILabel
+                        htmlFor="email"
+                        className="text-neutral-700 dark:text-neutral-300"
+                      >
+                        Email Address
+                      </UILabel>
                       <EnhancedInput
                         {...registerProfile('email')}
                         id="email"
@@ -457,7 +489,7 @@ export const UserProfile: React.FC = () => {
                         className="transition-all duration-300"
                       />
                       {profileErrors.email && (
-                        <motion.p 
+                        <motion.p
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           className="text-red-500 text-sm flex items-center gap-1"
@@ -477,9 +509,13 @@ export const UserProfile: React.FC = () => {
                         <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-indigo-400/20 rounded-xl opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300" />
                         {updateLoading ? (
                           <div className="flex items-center justify-center space-x-2 relative z-10">
-                            <motion.div 
+                            <motion.div
                               animate={{ rotate: 360 }}
-                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                              transition={{
+                                duration: 1,
+                                repeat: Infinity,
+                                ease: 'linear',
+                              }}
                               className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
                             />
                             <span>Saving Changes...</span>
@@ -507,7 +543,7 @@ export const UserProfile: React.FC = () => {
                     </div>
                   </motion.form>
                 ) : (
-                  <motion.div 
+                  <motion.div
                     key="view"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -535,42 +571,61 @@ export const UserProfile: React.FC = () => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Full Name</Label>
+                        <UILabel className="text-neutral-600 dark:text-neutral-400 text-sm font-medium">
+                          Full Name
+                        </UILabel>
                         <p className="text-lg font-semibold text-neutral-800 dark:text-neutral-200">
                           {user?.name}
                         </p>
                       </div>
-                      
+
                       <div className="space-y-2">
-                        <Label className="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Account Role</Label>
+                        <UILabel className="text-neutral-600 dark:text-neutral-400 text-sm font-medium">
+                          Account Role
+                        </UILabel>
                         <p className="text-lg font-semibold text-neutral-800 dark:text-neutral-200 capitalize">
                           {user?.role}
                         </p>
                       </div>
 
                       <div className="space-y-2 sm:col-span-2">
-                        <Label className="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Email Address</Label>
+                        <UILabel className="text-neutral-600 dark:text-neutral-400 text-sm font-medium">
+                          Email Address
+                        </UILabel>
                         <div className="flex items-center space-x-3">
                           <p className="text-lg font-semibold text-neutral-800 dark:text-neutral-200">
                             {user?.email}
                           </p>
                           {user?.isEmailVerified ? (
-                            <StatusBadge icon={CheckCircle} label="Verified" variant="success" />
+                            <StatusBadge
+                              icon={CheckCircle}
+                              label="Verified"
+                              variant="success"
+                            />
                           ) : (
-                            <StatusBadge icon={AlertCircle} label="Unverified" variant="warning" />
+                            <StatusBadge
+                              icon={AlertCircle}
+                              label="Unverified"
+                              variant="warning"
+                            />
                           )}
                         </div>
                       </div>
 
                       <div className="space-y-2 sm:col-span-2">
-                        <Label className="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Member Since</Label>
+                        <UILabel className="text-neutral-600 dark:text-neutral-400 text-sm font-medium">
+                          Member Since
+                        </UILabel>
                         <p className="text-lg font-semibold text-neutral-800 dark:text-neutral-200">
-                          {user?.createdAt 
-                            ? new Date(user.createdAt).toLocaleDateString('en-US', { 
-                                month: 'long', 
-                                day: 'numeric',
-                                year: 'numeric' 
-                              })
+                          {user?.createdAt
+                            ? new Date(user.createdAt).toLocaleDateString(
+                                'en-US',
+                                {
+                                  month: 'long',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                }
+                              )
                             : 'N/A'}
                         </p>
                       </div>
@@ -590,7 +645,7 @@ export const UserProfile: React.FC = () => {
                 !isChangingPassword && (
                   <button
                     type="button"
-                    onClick={(e) => {
+                    onClick={e => {
                       e.preventDefault();
                       setActiveEditMode('password');
                     }}
@@ -606,16 +661,21 @@ export const UserProfile: React.FC = () => {
             >
               <AnimatePresence mode="wait">
                 {isChangingPassword ? (
-                  <motion.form 
+                  <motion.form
                     key="password-edit"
                     initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
+                    animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    onSubmit={handlePasswordSubmit(onPasswordSubmit)} 
+                    onSubmit={handlePasswordSubmit(onPasswordSubmit)}
                     className="space-y-6"
                   >
                     <LabelInputContainer>
-                      <Label htmlFor="currentPassword" className="text-neutral-700 dark:text-neutral-300">Current Password</Label>
+                      <UILabel
+                        htmlFor="currentPassword"
+                        className="text-neutral-700 dark:text-neutral-300"
+                      >
+                        Current Password
+                      </UILabel>
                       <div className="relative">
                         <EnhancedInput
                           {...registerPassword('currentPassword')}
@@ -626,17 +686,21 @@ export const UserProfile: React.FC = () => {
                         />
                         <button
                           type="button"
-                          onClick={(e) => {
+                          onClick={e => {
                             e.preventDefault();
                             setShowCurrentPassword(!showCurrentPassword);
                           }}
                           className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300 transition-colors z-10"
                         >
-                          {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          {showCurrentPassword ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
                         </button>
                       </div>
                       {passwordErrors.currentPassword && (
-                        <motion.p 
+                        <motion.p
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           className="text-red-500 text-sm flex items-center gap-1"
@@ -648,7 +712,12 @@ export const UserProfile: React.FC = () => {
                     </LabelInputContainer>
 
                     <LabelInputContainer>
-                      <Label htmlFor="newPassword" className="text-neutral-700 dark:text-neutral-300">New Password</Label>
+                      <UILabel
+                        htmlFor="newPassword"
+                        className="text-neutral-700 dark:text-neutral-300"
+                      >
+                        New Password
+                      </UILabel>
                       <div className="relative">
                         <EnhancedInput
                           {...registerPassword('newPassword')}
@@ -659,17 +728,21 @@ export const UserProfile: React.FC = () => {
                         />
                         <button
                           type="button"
-                          onClick={(e) => {
+                          onClick={e => {
                             e.preventDefault();
                             setShowNewPassword(!showNewPassword);
                           }}
                           className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300 transition-colors z-10"
                         >
-                          {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          {showNewPassword ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
                         </button>
                       </div>
                       {passwordErrors.newPassword && (
-                        <motion.p 
+                        <motion.p
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           className="text-red-500 text-sm flex items-center gap-1"
@@ -681,7 +754,12 @@ export const UserProfile: React.FC = () => {
                     </LabelInputContainer>
 
                     <LabelInputContainer>
-                      <Label htmlFor="confirmPassword" className="text-neutral-700 dark:text-neutral-300">Confirm New Password</Label>
+                      <UILabel
+                        htmlFor="confirmPassword"
+                        className="text-neutral-700 dark:text-neutral-300"
+                      >
+                        Confirm New Password
+                      </UILabel>
                       <div className="relative">
                         <EnhancedInput
                           {...registerPassword('confirmPassword')}
@@ -692,17 +770,21 @@ export const UserProfile: React.FC = () => {
                         />
                         <button
                           type="button"
-                          onClick={(e) => {
+                          onClick={e => {
                             e.preventDefault();
                             setShowConfirmPassword(!showConfirmPassword);
                           }}
                           className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300 transition-colors z-10"
                         >
-                          {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          {showConfirmPassword ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
                         </button>
                       </div>
                       {passwordErrors.confirmPassword && (
-                        <motion.p 
+                        <motion.p
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           className="text-red-500 text-sm flex items-center gap-1"
@@ -722,9 +804,13 @@ export const UserProfile: React.FC = () => {
                         <div className="absolute inset-0 bg-gradient-to-r from-red-400/20 to-pink-400/20 rounded-xl opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300" />
                         {passwordLoading ? (
                           <div className="flex items-center justify-center space-x-2 relative z-10">
-                            <motion.div 
+                            <motion.div
                               animate={{ rotate: 360 }}
-                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                              transition={{
+                                duration: 1,
+                                repeat: Infinity,
+                                ease: 'linear',
+                              }}
                               className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
                             />
                             <span>Updating Password...</span>
@@ -752,7 +838,7 @@ export const UserProfile: React.FC = () => {
                     </div>
                   </motion.form>
                 ) : (
-                  <motion.div 
+                  <motion.div
                     key="security-view"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -773,25 +859,39 @@ export const UserProfile: React.FC = () => {
                             </p>
                           </div>
                         </div>
-                        <StatusBadge icon={Check} label="Secure" variant="success" />
+                        <StatusBadge
+                          icon={Check}
+                          label="Secure"
+                          variant="success"
+                        />
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Last Password Update</Label>
+                        <UILabel className="text-neutral-600 dark:text-neutral-400 text-sm font-medium">
+                          Last Password Update
+                        </UILabel>
                         <p className="text-lg font-semibold text-neutral-800 dark:text-neutral-200">
-                          {user?.updatedAt ? new Date(user.updatedAt).toLocaleDateString() : 'N/A'}
+                          {user?.updatedAt
+                            ? new Date(user.updatedAt).toLocaleDateString()
+                            : 'N/A'}
                         </p>
                       </div>
-                      
+
                       <div className="space-y-2">
-                        <Label className="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Security Score</Label>
+                        <UILabel className="text-neutral-600 dark:text-neutral-400 text-sm font-medium">
+                          Security Score
+                        </UILabel>
                         <div className="flex items-center space-x-2">
                           <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div className={`h-2 rounded-full ${user?.isEmailVerified ? 'bg-green-500 w-4/5' : 'bg-orange-500 w-3/5'}`}></div>
+                            <div
+                              className={`h-2 rounded-full ${user?.isEmailVerified ? 'bg-green-500 w-4/5' : 'bg-orange-500 w-3/5'}`}
+                            ></div>
                           </div>
-                          <span className={`text-sm font-medium ${user?.isEmailVerified ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                          <span
+                            className={`text-sm font-medium ${user?.isEmailVerified ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}
+                          >
                             {user?.isEmailVerified ? '85%' : '65%'}
                           </span>
                         </div>
@@ -799,7 +899,9 @@ export const UserProfile: React.FC = () => {
                     </div>
 
                     <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
-                      <h4 className="font-medium text-neutral-800 dark:text-neutral-200 mb-3">Security Recommendations</h4>
+                      <h4 className="font-medium text-neutral-800 dark:text-neutral-200 mb-3">
+                        Security Recommendations
+                      </h4>
                       <div className="space-y-2 text-sm text-neutral-600 dark:text-neutral-400">
                         <div className="flex items-center space-x-2">
                           <CheckCircle className="w-4 h-4 text-green-500" />
@@ -820,7 +922,9 @@ export const UserProfile: React.FC = () => {
                         </div>
                         <div className="flex items-center space-x-2">
                           <AlertCircle className="w-4 h-4 text-amber-500" />
-                          <span>Consider enabling two-factor authentication</span>
+                          <span>
+                            Consider enabling two-factor authentication
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -838,7 +942,7 @@ export const UserProfile: React.FC = () => {
             iconColor="bg-gradient-to-br from-purple-500 to-violet-600"
           >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <motion.div 
+              <motion.div
                 initial={hasAnimated ? false : { opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: hasAnimated ? 0 : 0.1 }}
@@ -846,7 +950,9 @@ export const UserProfile: React.FC = () => {
               >
                 <div className="flex items-center space-x-2">
                   <Palette className="w-5 h-5 text-purple-500" />
-                  <Label className="font-medium text-neutral-800 dark:text-neutral-200">Theme</Label>
+                  <UILabel className="font-medium text-neutral-800 dark:text-neutral-200">
+                    Theme
+                  </UILabel>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-4 bg-slate-900 dark:bg-slate-100 rounded-full border-2 border-slate-300 dark:border-slate-600"></div>
@@ -855,8 +961,8 @@ export const UserProfile: React.FC = () => {
                   </span>
                 </div>
               </motion.div>
-              
-              <motion.div 
+
+              <motion.div
                 initial={hasAnimated ? false : { opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: hasAnimated ? 0 : 0.2 }}
@@ -864,18 +970,24 @@ export const UserProfile: React.FC = () => {
               >
                 <div className="flex items-center space-x-2">
                   <BellRing className="w-5 h-5 text-blue-500" />
-                  <Label className="font-medium text-neutral-800 dark:text-neutral-200">Notifications</Label>
+                  <UILabel className="font-medium text-neutral-800 dark:text-neutral-200">
+                    Notifications
+                  </UILabel>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <StatusBadge 
-                    icon={user?.preferences?.notifications ? Bell : BellRing} 
-                    label={user?.preferences?.notifications ? 'Enabled' : 'Disabled'} 
-                    variant={user?.preferences?.notifications ? 'success' : 'warning'} 
+                  <StatusBadge
+                    icon={user?.preferences?.notifications ? Bell : BellRing}
+                    label={
+                      user?.preferences?.notifications ? 'Enabled' : 'Disabled'
+                    }
+                    variant={
+                      user?.preferences?.notifications ? 'success' : 'warning'
+                    }
                   />
                 </div>
               </motion.div>
-              
-              <motion.div 
+
+              <motion.div
                 initial={hasAnimated ? false : { opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: hasAnimated ? 0 : 0.3 }}
@@ -883,7 +995,9 @@ export const UserProfile: React.FC = () => {
               >
                 <div className="flex items-center space-x-2">
                   <Languages className="w-5 h-5 text-green-500" />
-                  <Label className="font-medium text-neutral-800 dark:text-neutral-200">Language</Label>
+                  <UILabel className="font-medium text-neutral-800 dark:text-neutral-200">
+                    Language
+                  </UILabel>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Globe className="w-4 h-4 text-green-500" />
@@ -904,15 +1018,19 @@ export const UserProfile: React.FC = () => {
                 <button className="flex items-center justify-between p-3 bg-white dark:bg-black border border-neutral-200 dark:border-neutral-800 rounded-lg hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors group">
                   <div className="flex items-center space-x-3">
                     <Smartphone className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Manage Sessions</span>
+                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Manage Sessions
+                    </span>
                   </div>
                   <ExternalLink className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300" />
                 </button>
-                
+
                 <button className="flex items-center justify-between p-3 bg-white dark:bg-black border border-neutral-200 dark:border-neutral-800 rounded-lg hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors group">
                   <div className="flex items-center space-x-3">
                     <Shield className="w-4 h-4 text-green-500" />
-                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Privacy Settings</span>
+                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Privacy Settings
+                    </span>
                   </div>
                   <ExternalLink className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300" />
                 </button>

@@ -1,12 +1,14 @@
 import express, { Request, Response } from 'express';
-import { v4 as uuidv4 } from 'uuid';
+import { body, param } from 'express-validator';
+import { ideaProcessingService } from '../services/ideaProcessing.js';
+import {
+  jobQueueService,
+  IdeaProcessingJobData,
+} from '../services/jobQueue.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { handleValidationErrors } from '../middleware/validation.js';
-import { jobQueueService, IdeaProcessingJobData } from '../services/jobQueue.js';
-import { ideaProcessingService } from '../services/ideaProcessing.js';
 import { logger } from '../utils/logger.js';
-import { body, param, query } from 'express-validator';
-import mongoose from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
 
@@ -28,7 +30,9 @@ const processIdeaValidation = [
   body('technicalPreferences')
     .optional()
     .isArray({ max: 15 })
-    .withMessage('Technical preferences must be an array with maximum 15 items'),
+    .withMessage(
+      'Technical preferences must be an array with maximum 15 items'
+    ),
   body('priority')
     .optional()
     .isInt({ min: 0, max: 10 })
@@ -36,9 +40,7 @@ const processIdeaValidation = [
 ];
 
 const jobIdValidation = [
-  param('jobId')
-    .isUUID()
-    .withMessage('Job ID must be a valid UUID'),
+  param('jobId').isUUID().withMessage('Job ID must be a valid UUID'),
 ];
 
 const projectIdValidation = [
@@ -53,13 +55,21 @@ const projectIdValidation = [
  * @access Private
  */
 router.post(
-  '/:projectId/ideas/process',
+  '/projects/:projectId/ideas/process',
   authenticateToken,
   [...projectIdValidation, ...processIdeaValidation],
   handleValidationErrors,
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       const { projectId } = req.params;
+      if (!projectId) {
+        res.status(400).json({
+          success: false,
+          message: 'Project ID is required',
+        });
+        return;
+      }
+
       const {
         description,
         targetAudience,
@@ -88,7 +98,9 @@ router.post(
       // Add job to queue
       const job = await jobQueueService.addIdeaProcessingJob(jobData);
 
-      logger.info(`Started idea processing job ${jobId} for project ${projectId} by user ${userId}`);
+      logger.info(
+        `Started idea processing job ${jobId} for project ${projectId} by user ${userId}`
+      );
 
       res.status(202).json({
         success: true,
@@ -101,7 +113,6 @@ router.post(
           bullJobId: job.id,
         },
       });
-
     } catch (error) {
       logger.error('Failed to start idea processing:', error);
       res.status(500).json({
@@ -119,13 +130,21 @@ router.post(
  * @access Private
  */
 router.post(
-  '/:projectId/ideas/process-sync',
+  '/projects/:projectId/ideas/process-sync',
   authenticateToken,
   [...projectIdValidation, ...processIdeaValidation],
   handleValidationErrors,
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       const { projectId } = req.params;
+      if (!projectId) {
+        res.status(400).json({
+          success: false,
+          message: 'Project ID is required',
+        });
+        return;
+      }
+
       const {
         description,
         targetAudience,
@@ -144,14 +163,15 @@ router.post(
         technicalPreferences,
       });
 
-      logger.info(`Completed synchronous idea processing for project ${projectId}`);
+      logger.info(
+        `Completed synchronous idea processing for project ${projectId}`
+      );
 
       res.status(200).json({
         success: true,
         message: 'Idea processed successfully',
         data: result,
       });
-
     } catch (error) {
       logger.error('Failed to process idea synchronously:', error);
       res.status(500).json({
@@ -173,33 +193,42 @@ router.get(
   authenticateToken,
   jobIdValidation,
   handleValidationErrors,
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       const { jobId } = req.params;
+      if (!jobId) {
+        res.status(400).json({
+          success: false,
+          message: 'Job ID is required',
+        });
+        return;
+      }
+
       const userId = req.user!.userId;
 
       const progress = await jobQueueService.getJobProgress(jobId);
 
       if (!progress) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'Job not found',
         });
+        return;
       }
 
       // Check if user owns this job
       if (progress.userId !== userId) {
-        return res.status(403).json({
+        res.status(403).json({
           success: false,
           message: 'Access denied to this job',
         });
+        return;
       }
 
       res.status(200).json({
         success: true,
         data: progress,
       });
-
     } catch (error) {
       logger.error('Failed to get job status:', error);
       res.status(500).json({
@@ -221,26 +250,36 @@ router.delete(
   authenticateToken,
   jobIdValidation,
   handleValidationErrors,
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       const { jobId } = req.params;
+      if (!jobId) {
+        res.status(400).json({
+          success: false,
+          message: 'Job ID is required',
+        });
+        return;
+      }
+
       const userId = req.user!.userId;
 
       // Get job progress to verify ownership
       const progress = await jobQueueService.getJobProgress(jobId);
 
       if (!progress) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'Job not found',
         });
+        return;
       }
 
       if (progress.userId !== userId) {
-        return res.status(403).json({
+        res.status(403).json({
           success: false,
           message: 'Access denied to this job',
         });
+        return;
       }
 
       const cancelled = await jobQueueService.cancelJob(jobId);
@@ -256,7 +295,6 @@ router.delete(
           message: 'Failed to cancel job',
         });
       }
-
     } catch (error) {
       logger.error('Failed to cancel job:', error);
       res.status(500).json({
@@ -276,7 +314,7 @@ router.delete(
 router.get(
   '/jobs/my-jobs',
   authenticateToken,
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       const userId = req.user!.userId;
 
@@ -289,7 +327,6 @@ router.get(
           count: activeJobs.length,
         },
       });
-
     } catch (error) {
       logger.error('Failed to get user jobs:', error);
       res.status(500).json({
@@ -309,7 +346,7 @@ router.get(
 router.get(
   '/queue/stats',
   authenticateToken,
-  async (req: Request, res: Response) => {
+  async (_req: Request, res: Response): Promise<void> => {
     try {
       // Check if user is admin (optional - can be implemented later)
       // const isAdmin = req.user!.role === 'admin';
@@ -330,7 +367,6 @@ router.get(
           health: healthCheck,
         },
       });
-
     } catch (error) {
       logger.error('Failed to get queue stats:', error);
       res.status(500).json({
@@ -348,11 +384,11 @@ router.get(
  * @access Private
  */
 router.get(
-  '/:projectId/ideas/latest',
+  '/projects/:projectId/ideas/latest',
   authenticateToken,
   projectIdValidation,
   handleValidationErrors,
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       const { projectId } = req.params;
       const userId = req.user!.userId;
@@ -364,10 +400,11 @@ router.get(
       );
 
       if (!completedJob || !completedJob.result) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'No completed idea processing found for this project',
         });
+        return;
       }
 
       res.status(200).json({
@@ -378,7 +415,6 @@ router.get(
           metrics: completedJob.metrics,
         },
       });
-
     } catch (error) {
       logger.error('Failed to get latest idea result:', error);
       res.status(500).json({
@@ -395,27 +431,29 @@ router.get(
  * @desc Health check for queue services
  * @access Public
  */
-router.get('/queue/health', async (req: Request, res: Response) => {
-  try {
-    const healthCheck = await jobQueueService.healthCheck();
+router.get(
+  '/queue/health',
+  async (_req: Request, res: Response): Promise<void> => {
+    try {
+      const healthCheck = await jobQueueService.healthCheck();
 
-    const statusCode = healthCheck.redis && healthCheck.queue ? 200 : 503;
+      const statusCode = healthCheck.redis && healthCheck.queue ? 200 : 503;
 
-    res.status(statusCode).json({
-      success: healthCheck.redis && healthCheck.queue,
-      data: healthCheck,
-      timestamp: new Date().toISOString(),
-    });
-
-  } catch (error) {
-    logger.error('Queue health check failed:', error);
-    res.status(503).json({
-      success: false,
-      message: 'Health check failed',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString(),
-    });
+      res.status(statusCode).json({
+        success: healthCheck.redis && healthCheck.queue,
+        data: healthCheck,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      logger.error('Queue health check failed:', error);
+      res.status(503).json({
+        success: false,
+        message: 'Health check failed',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+      });
+    }
   }
-});
+);
 
-export default router; 
+export default router;

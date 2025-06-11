@@ -9,14 +9,16 @@ function createRedisConfig(): RedisOptions {
   // Check if REDIS_URL is provided (connection string format)
   if (process.env.REDIS_URL) {
     const url = process.env.REDIS_URL;
-    
+
     // Parse Redis URL (supports both redis:// and rediss:// protocols)
     try {
       const parsedUrl = new URL(url);
-      
+
       const config: RedisOptions = {
         host: parsedUrl.hostname,
-        port: parseInt(parsedUrl.port) || (parsedUrl.protocol === 'rediss:' ? 6380 : 6379),
+        port:
+          parseInt(parsedUrl.port) ||
+          (parsedUrl.protocol === 'rediss:' ? 6380 : 6379),
         db: parseInt(parsedUrl.pathname.slice(1)) || 0,
         enableReadyCheck: false,
         maxRetriesPerRequest: 3,
@@ -53,7 +55,9 @@ function createRedisConfig(): RedisOptions {
       return config;
     } catch (error) {
       logger.error('Failed to parse REDIS_URL:', error);
-      throw new Error(`Invalid REDIS_URL format: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Invalid REDIS_URL format: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -114,7 +118,7 @@ export function createRedisClient(): Redis {
     logger.info('Redis client ready and connected successfully');
   });
 
-  redis.on('error', (error) => {
+  redis.on('error', error => {
     logger.error('Redis connection error:', {
       error: error.message,
       host: config.host,
@@ -143,11 +147,13 @@ export async function testRedisConnection(client: Redis): Promise<boolean> {
       logger.info('Redis connection test successful');
       return true;
     } else {
-      logger.error('Redis connection test failed: unexpected response', { response });
+      logger.error('Redis connection test failed: unexpected response', {
+        response,
+      });
       return false;
     }
   } catch (error) {
     logger.error('Redis connection test failed:', error);
     return false;
   }
-} 
+}

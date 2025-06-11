@@ -10,6 +10,7 @@ BRANCH_PROTECTION_SUMMARY.md
 saas_blueprint_generator_sequence_diagram.mermaid
 saas_blueprint_generator_class_diagram.mermaid
 
+.cursor/
 # Node.js dependencies
 node_modules/
 npm-debug.log*
