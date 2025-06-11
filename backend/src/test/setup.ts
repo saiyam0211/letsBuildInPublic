@@ -9,6 +9,17 @@ import fs from 'fs';
 
 let mongoServer: MongoMemoryServer;
 
+// Mock OpenAI API for test environment
+if (process.env.NODE_ENV === 'test') {
+  // Set test environment variables
+  process.env.OPENAI_API_KEY =
+    'sk-test-mock-api-key-for-testing-12345678901234567890';
+  process.env.REDIS_URL = 'redis://localhost:6379'; // Mock Redis URL
+  process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing-only';
+  process.env.JWT_REFRESH_SECRET =
+    'test-jwt-refresh-secret-key-for-testing-only';
+}
+
 beforeAll(async () => {
   // Setup CI environment if running in CI
   setupCIEnvironment();

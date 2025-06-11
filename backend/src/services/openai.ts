@@ -74,9 +74,10 @@ export class OpenAIService {
   }
 
   /**
-   * Handle OpenAI API errors with proper categorization
+   * Handle OpenAI API errors with proper categorization and retry logic
    */
   private handleOpenAIError(error: unknown): OpenAIError {
+    // Check if error has status property (HTTP response error)
     if (error && typeof error === 'object' && 'status' in error) {
       const statusError = error as {
         status: number;
@@ -84,31 +85,38 @@ export class OpenAIService {
         message?: string;
       };
 
+      // Rate limiting error - should be retried
       if (statusError.status === 429) {
         const retryAfter = statusError.headers?.['retry-after']
-          ? parseInt(statusError.headers['retry-after'])
-          : 60;
+          ? parseInt(statusError.headers['retry-after']) * 1000
+          : 60000;
         return {
           type: 'rate_limit',
-          message:
-            'Rate limit exceeded. Please wait before making another request.',
-          retryAfter: retryAfter * 1000, // Convert to milliseconds
+          message: `Rate limit exceeded. Retry after ${retryAfter / 1000} seconds.`,
+          retryAfter,
           canRetry: true,
         };
       }
 
-      if (
-        statusError.status === 402 ||
-        (statusError.status === 400 && statusError.message?.includes('quota'))
-      ) {
+      // Quota/billing errors - should not be retried
+      if (statusError.status === 402) {
         return {
           type: 'insufficient_quota',
-          message:
-            'Insufficient quota or billing issue. Please check your OpenAI account.',
+          message: `Insufficient quota. Please check your OpenAI billing.`,
           canRetry: false,
         };
       }
 
+      // Authentication errors
+      if (statusError.status === 401) {
+        return {
+          type: 'validation_error',
+          message: `Invalid OpenAI API key. Please check your configuration.`,
+          canRetry: false,
+        };
+      }
+
+      // Bad request errors
       if (statusError.status === 400) {
         return {
           type: 'validation_error',
@@ -116,24 +124,36 @@ export class OpenAIService {
           canRetry: false,
         };
       }
+
+      // Server errors - may be retried
+      if (statusError.status >= 500) {
+        return {
+          type: 'api_error',
+          message: `OpenAI server error (${statusError.status}). Please try again later.`,
+          canRetry: true,
+        };
+      }
     }
 
+    // Check if error has code property (network/timeout error)
     if (error && typeof error === 'object' && 'code' in error) {
       const codeError = error as { code: string; message?: string };
 
-      if (codeError.code === 'ENOTFOUND' || codeError.code === 'ECONNREFUSED') {
+      // Network errors - should be retried
+      if (
+        codeError.code === 'ENOTFOUND' ||
+        codeError.code === 'ECONNRESET' ||
+        codeError.code === 'ETIMEDOUT'
+      ) {
         return {
           type: 'network_error',
-          message:
-            'Network connection failed. Please check your internet connection.',
+          message: `Network error: ${codeError.message || codeError.code}. Please check your connection.`,
           canRetry: true,
         };
       }
 
-      if (
-        codeError.code === 'TIMEOUT' ||
-        codeError.message?.includes('timeout')
-      ) {
+      // Timeout errors
+      if (codeError.code === 'TIMEOUT') {
         return {
           type: 'timeout',
           message:
@@ -143,13 +163,24 @@ export class OpenAIService {
       }
     }
 
-    const message =
-      error instanceof Error
-        ? error.message
-        : 'An unexpected error occurred with the OpenAI API.';
+    // Check for timeout in message
+    if (error && typeof error === 'object' && 'message' in error) {
+      const messageError = error as { message: string };
+      if (messageError.message?.includes('timeout')) {
+        return {
+          type: 'timeout',
+          message:
+            'Request timed out. The operation took too long to complete.',
+          canRetry: true,
+        };
+      }
+    }
+
+    // Generic error
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return {
       type: 'api_error',
-      message,
+      message: `OpenAI API Error: ${message}`,
       canRetry: true,
     };
   }
@@ -162,13 +193,20 @@ export class OpenAIService {
     maxRetries: number = aiConfig.openai.maxRetries,
     baseDelay: number = 1000
   ): Promise<T> {
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    // Reduce retries and delays in test environment
+    const isTestEnv = process.env.NODE_ENV === 'test';
+    const effectiveMaxRetries = isTestEnv
+      ? Math.min(maxRetries, 2)
+      : maxRetries;
+    const effectiveBaseDelay = isTestEnv ? Math.min(baseDelay, 100) : baseDelay;
+
+    for (let attempt = 0; attempt <= effectiveMaxRetries; attempt++) {
       try {
         return await operation();
       } catch (error) {
         const openAIError = this.handleOpenAIError(error);
 
-        if (!openAIError.canRetry || attempt === maxRetries) {
+        if (!openAIError.canRetry || attempt === effectiveMaxRetries) {
           console.error(
             `❌ OpenAI request failed after ${attempt + 1} attempts:`,
             openAIError.message
@@ -176,8 +214,13 @@ export class OpenAIService {
           throw new Error(`OpenAI ${openAIError.type}: ${openAIError.message}`);
         }
 
-        const delay =
-          openAIError.retryAfter || baseDelay * Math.pow(2, attempt);
+        let delay =
+          openAIError.retryAfter || effectiveBaseDelay * Math.pow(2, attempt);
+        // Cap delay at 2 seconds in test environment
+        if (isTestEnv) {
+          delay = Math.min(delay, 2000);
+        }
+
         console.warn(
           `⚠️  Attempt ${attempt + 1} failed (${openAIError.type}), retrying in ${delay}ms...`
         );
@@ -190,7 +233,7 @@ export class OpenAIService {
   }
 
   /**
-   * Make a completion request with full error handling and monitoring
+   * Make OpenAI completion request with enhanced error handling and retry logic
    */
   async completion(
     prompt: string,

@@ -154,14 +154,14 @@ describe('OpenAI Integration', () => {
       Object.assign(mockError, {
         status: 429,
         message: 'Rate limit exceeded',
-        headers: { 'retry-after': '60' },
+        headers: { 'retry-after': '1' }, // Use shorter retry time for tests
       });
 
-      mockCreate.mockRejectedValueOnce(mockError);
+      mockCreate.mockRejectedValue(mockError); // Use mockRejectedValue instead of mockRejectedValueOnce
 
-      // Simply test that the service handles errors properly
+      // Test that the service handles errors properly with shorter timeout
       await expect(testService.completion('test prompt')).rejects.toThrow();
-    }, 10000); // Increase timeout to 10 seconds
+    }, 5000); // Reduce timeout to 5 seconds
   });
 
   describe('Service Methods', () => {

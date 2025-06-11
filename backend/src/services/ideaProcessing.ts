@@ -233,11 +233,25 @@ export class IdeaProcessingService {
   }
 
   /**
+   * Validate if a string is a valid MongoDB ObjectId
+   */
+  private isValidObjectId(id: string): boolean {
+    return /^[0-9a-fA-F]{24}$/.test(id);
+  }
+
+  /**
    * Save the raw idea to the database
    */
   private async saveIdeaToDatabase(
     request: IdeaProcessingRequest
   ): Promise<ISaasIdea> {
+    // Validate projectId before creating ObjectId
+    if (!this.isValidObjectId(request.projectId)) {
+      throw new Error(
+        'Invalid project ID format. Must be a 24-character hex string.'
+      );
+    }
+
     const ideaData = {
       projectId: new mongoose.Types.ObjectId(request.projectId),
       description: request.description,
