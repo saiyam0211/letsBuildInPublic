@@ -4,6 +4,7 @@ import {
   Route,
   Navigate,
   Link,
+  useLocation,
 } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store } from './store';
@@ -11,7 +12,7 @@ import { AuthInitializer } from './components/auth/AuthInitializer';
 import { AuthLayout } from './components/layout/AuthLayout';
 import { AuthForms } from './components/auth/AuthForms';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
-import { UserProfile } from './components/user/UserProfile';
+import { UserProfile } from './components/user/UserProfile.tsx';
 import {
   ToastProvider,
   useToastContext,
@@ -22,6 +23,9 @@ import { EmailVerification } from './components/auth/EmailVerification';
 import { EmailVerificationBanner } from './components/auth/EmailVerificationBanner';
 import { ForgotPassword } from './components/auth/ForgotPassword';
 import { ResetPassword } from './components/auth/ResetPassword';
+import LandingPage from './pages/LandingPage';
+import IdeaProcessingPage from './pages/IdeaProcessingPage';
+import FloatingDockDemo from './components/ui/floating-dock-demo';
 import './index.css';
 
 // Enhanced dashboard component with user info and logout
@@ -287,6 +291,27 @@ const DashboardComponent = () => {
   );
 };
 
+// Component to conditionally render FloatingDock
+const ConditionalFloatingDock = () => {
+  const location = useLocation();
+
+  // List of routes where FloatingDock should NOT appear
+  const authRoutes = [
+    '/login',
+    '/register',
+    '/forgot-password',
+    '/reset-password',
+    '/email-verification',
+  ];
+
+  // Don't show FloatingDock on auth routes
+  if (authRoutes.includes(location.pathname)) {
+    return null;
+  }
+
+  return <FloatingDockDemo />;
+};
+
 function App() {
   return (
     <Provider store={store}>
@@ -295,16 +320,18 @@ function App() {
           <div className="dark">
             <Router>
               <Routes>
-                {/* Public routes (redirect to dashboard if authenticated) */}
+                {/* Public landing page - main route */}
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/process-idea" element={<IdeaProcessingPage />} />
+
+                {/* Authentication routes */}
                 <Route
                   path="/login"
                   element={
                     <ProtectedRoute requireAuth={false}>
                       <AuthLayout>
                         <AuthForms
-                          onSuccess={() =>
-                            (window.location.href = '/dashboard')
-                          }
+                          onSuccess={() => (window.location.href = '/')}
                         />
                       </AuthLayout>
                     </ProtectedRoute>
@@ -316,9 +343,7 @@ function App() {
                     <ProtectedRoute requireAuth={false}>
                       <AuthLayout>
                         <AuthForms
-                          onSuccess={() =>
-                            (window.location.href = '/dashboard')
-                          }
+                          onSuccess={() => (window.location.href = '/')}
                         />
                       </AuthLayout>
                     </ProtectedRoute>
@@ -367,10 +392,12 @@ function App() {
                   element={<EmailVerification />}
                 />
 
-                {/* Default redirects */}
-                <Route path="/" element={<Navigate to="/login" replace />} />
-                <Route path="*" element={<Navigate to="/login" replace />} />
+                {/* Catch all route */}
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
+
+              {/* Conditional Global Floating Navigation Dock */}
+              <ConditionalFloatingDock />
             </Router>
           </div>
         </AuthInitializer>

@@ -306,7 +306,8 @@ describe('Processing Pipeline Integration Tests', () => {
           .post(`/api/projects/${projectId}/ideas/process`)
           .set('Authorization', `Bearer ${authToken}`)
           .send({
-            description: 'Online learning platform',
+            description:
+              'A comprehensive online learning platform designed to revolutionize education through interactive courses and personalized learning experiences',
             targetAudience: 'Students and educators',
             problemStatement: 'Traditional learning is not engaging',
             desiredFeatures: ['Interactive courses', 'Progress tracking'],
@@ -401,7 +402,8 @@ describe('Processing Pipeline Integration Tests', () => {
         .post('/api/projects/invalid-id/ideas/process')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
-          description: 'Test description',
+          description:
+            'A comprehensive test description that meets the minimum character requirements for validation',
           targetAudience: 'Test audience',
           problemStatement: 'Test problem statement',
         });
@@ -415,7 +417,8 @@ describe('Processing Pipeline Integration Tests', () => {
         .post(`/api/projects/${projectId}/ideas/process`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
-          description: 'Test description',
+          description:
+            'A comprehensive test description that meets the minimum character requirements for validation',
           // Missing targetAudience and problemStatement
         });
 

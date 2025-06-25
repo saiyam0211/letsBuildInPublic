@@ -41,22 +41,28 @@ export const connectDatabase = async (): Promise<void> => {
       logger.warn('MongoDB disconnected');
     });
 
-    // Graceful shutdown
-    process.on('SIGINT', async () => {
-      try {
-        await mongoose.connection.close();
-        logger.info('MongoDB connection closed through app termination');
-        process.exit(0);
-      } catch (error) {
-        logger.error('Error during MongoDB connection close:', error);
-        process.exit(1);
-      }
-    });
+    // Graceful shutdown (skip in test environment)
+    if (process.env.NODE_ENV !== 'test') {
+      process.on('SIGINT', async () => {
+        try {
+          await mongoose.connection.close();
+          logger.info('MongoDB connection closed through app termination');
+          process.exit(0);
+        } catch (error) {
+          logger.error('Error during MongoDB connection close:', error);
+          process.exit(1);
+        }
+      });
+    }
 
     await mongoose.connect(config.uri, config.options);
     logger.info('Database connection established');
   } catch (error) {
     logger.error('Failed to connect to database:', error);
+    // In test environment, throw error instead of exiting process
+    if (process.env.NODE_ENV === 'test') {
+      throw error;
+    }
     process.exit(1);
   }
 };

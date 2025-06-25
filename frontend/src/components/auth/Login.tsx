@@ -57,7 +57,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onToggleForm }) => {
           message:
             'You have been successfully signed in to your SaaS Blueprint Generator account.',
           action: {
-            label: 'Continue to Dashboard',
+            label: 'Continue to Home',
             onClick: () => {
               toast.removeToast(loadingToastId);
               onSuccess();
@@ -73,7 +73,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onToggleForm }) => {
           {
             duration: 3000,
             action: {
-              label: 'Continue to Dashboard',
+              label: 'Continue to Home',
               onClick: () => onSuccess(),
             },
           }
@@ -194,19 +194,19 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onToggleForm }) => {
       toast.updateToast(loadingId, {
         type: 'success',
         title: 'Welcome back!',
-        message: `Successfully logged in as ${response.data.user.name}. Redirecting to your dashboard...`,
+        message: `Successfully logged in as ${response.data.user.name}. Redirecting to home...`,
         action: {
-          label: 'Go to Dashboard',
+          label: 'Go to Home',
           onClick: () => {
             toast.removeToast(loadingId);
-            navigate('/dashboard');
+            navigate('/');
           },
         },
       });
 
       // Navigate after showing success message
       setTimeout(() => {
-        navigate('/dashboard');
+        navigate('/');
       }, 2000);
     } catch (error: unknown) {
       // Error handling is managed by useEffect monitoring authError

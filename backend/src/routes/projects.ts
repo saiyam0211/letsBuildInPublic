@@ -10,6 +10,8 @@ import {
 import { authenticateToken } from '../middleware/auth';
 import { handleValidationErrors } from '../middleware/validation';
 import { body, param, query } from 'express-validator';
+// Import the ideas routes
+import ideasRoutes from './ideas.js';
 
 const router = Router();
 
@@ -155,5 +157,9 @@ router.get(
   handleValidationErrors,
   getProjectOverview
 );
+
+// Mount ideas routes under projects
+// This creates routes like: /api/projects/:id/ideas
+router.use('/:id/ideas', ideasRoutes);
 
 export default router;

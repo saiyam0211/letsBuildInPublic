@@ -37,8 +37,8 @@ export const EmailVerification = () => {
           {
             duration: 5000,
             action: {
-              label: 'Go to Dashboard',
-              onClick: () => (window.location.href = '/dashboard'),
+              label: 'Go to Home',
+              onClick: () => (window.location.href = '/'),
             },
           }
         );
@@ -99,14 +99,14 @@ export const EmailVerification = () => {
               Email Verified Successfully!
             </h2>
             <p className="text-dark-text-secondary mb-6">
-              Your email has been verified. You'll be redirected to your
-              dashboard in a few seconds.
+              Your email has been verified. You'll be redirected to home in a
+              few seconds.
             </p>
             <button
-              onClick={() => (window.location.href = '/dashboard')}
+              onClick={() => (window.location.href = '/')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
-              Go to Dashboard
+              Go to Home
             </button>
           </div>
         );

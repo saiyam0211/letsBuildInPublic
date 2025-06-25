@@ -63,7 +63,7 @@ export const Register: React.FC<RegisterProps> = ({
           message:
             'Your account has been created successfully. Please check your email to verify your account.',
           action: {
-            label: 'Continue to Dashboard',
+            label: 'Continue to Home',
             onClick: () => {
               toast.removeToast(loadingToastId);
               onSuccess();

@@ -57,11 +57,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     if (!requireAuth && isAuthenticated && !isLoading) {
       toast.info(
         'Already signed in',
-        'You are already signed in. Redirecting to your dashboard.',
+        'You are already signed in. Redirecting to home.',
         {
           action: {
             label: 'Continue',
-            onClick: () => (window.location.href = '/dashboard'),
+            onClick: () => (window.location.href = '/'),
           },
         }
       );
@@ -86,8 +86,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // If authentication is not required and user is authenticated
   // (e.g., login/register pages when already logged in)
   if (!requireAuth && isAuthenticated) {
-    // Redirect to dashboard or intended page
-    const from = location.state?.from?.pathname || '/dashboard';
+    // Redirect to home or intended page
+    const from = location.state?.from?.pathname || '/';
     return <Navigate to={from} replace />;
   }
 

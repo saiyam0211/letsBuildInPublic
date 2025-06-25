@@ -8,6 +8,21 @@ export default [
     ignores: ['dist/**', 'node_modules/**'],
   },
   js.configs.recommended,
+  // Configuration for JavaScript files
+  {
+    files: ['**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      globals: globals.node,
+      sourceType: 'module',
+    },
+    rules: {
+      'no-console': 'off', // Allow console in backend
+      'no-unused-vars': 'warn',
+      'prefer-const': 'error',
+      'no-var': 'error',
+    },
+  },
   {
     files: ['**/*.ts'],
     languageOptions: {

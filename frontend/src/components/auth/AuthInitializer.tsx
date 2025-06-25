@@ -57,8 +57,8 @@ export const AuthInitializer: React.FC<AuthInitializerProps> = ({
                 {
                   duration: 4000,
                   action: {
-                    label: 'Go to Dashboard',
-                    onClick: () => (window.location.href = '/dashboard'),
+                    label: 'Go to Home',
+                    onClick: () => (window.location.href = '/'),
                   },
                 }
               );
